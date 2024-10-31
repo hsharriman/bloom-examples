@@ -1,25 +1,17 @@
-import { useState } from "react";
-import ReflectionDiagram from "./reflection";
+import EquilateralTriangleConstruction from "./constructions/equilateral_triangle.tsx";
+import PerpendicularBisectorConstructor from "./constructions/perpendicular_bisector.tsx";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <>
-      <div></div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+      <div style={{
+        display: "flex",
+        flexDirection: "row",
+        placeContent: "space-evenly",
+      }}>
+        <EquilateralTriangleConstruction />
+        <PerpendicularBisectorConstructor />
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-      <ReflectionDiagram />
     </>
   );
 }

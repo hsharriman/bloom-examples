@@ -435,20 +435,19 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@penrose/bloom@^4.0.0-alpha.3":
-  version "4.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/@penrose/bloom/-/bloom-4.0.0-alpha.3.tgz#6b9b6c659afff81e417e2d1c80b861d721c26ba5"
-  integrity sha512-62j0s0VYjabm2md3BCorqsX12qkh3XaDUWN5uS3mm7wFjh3bYNR7FASKgqARRsUVHN6Fp7y6n04E0wUFbkaghw==
+"@penrose/bloom@^4.0.0-alpha.5":
+  version "4.0.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/@penrose/bloom/-/bloom-4.0.0-alpha.5.tgz#718009106109100ddb43c860c5114266f9687780"
+  integrity sha512-o172JhNieYkmiW9C76GXkxIUzp+QrwOY4hIlOI5IALAW/TZjzigeWkJCD+M7DzSGQP9hAIl5jc/nj0KgoF4nzg==
   dependencies:
-    "@penrose/core" "^4.0.0-alpha.3"
-    prettier "^3.3.3"
+    "@penrose/core" "^4.0.0-alpha.5"
     react "^18.3.1"
     react-dom "^18.3.1"
 
-"@penrose/core@^4.0.0-alpha.3":
-  version "4.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/@penrose/core/-/core-4.0.0-alpha.3.tgz#1aa8c2984b6194ab8b8cf8bc1cd69b17054a02ce"
-  integrity sha512-kWqrtTqULf5r6QkkH26Zdfhqq0ndmdFGrSp0YPipivPY9mqFVqyHm6XJKKD3H4kZNZI40RaOY5OF/mzXwiI+lg==
+"@penrose/core@^4.0.0-alpha.5":
+  version "4.0.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/@penrose/core/-/core-4.0.0-alpha.5.tgz#d545f0397cdb23cb1395af1c2e1c9b18a4b9db24"
+  integrity sha512-nth3siKVt/JGdTBD99nMDQzvDza8XkVuUzwINkVGKWGgKGFKiDHMOcmYnHc0++LMX9GynPzvSs8xiq3eAkMPmQ==
   dependencies:
     "@datastructures-js/queue" "^4.1.3"
     consola "^3.2.3"
@@ -1588,11 +1587,6 @@ prelude-ls@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.2.1.tgz#debc6489d7a6e6b0e7611888cec880337d316396"
   integrity sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==
-
-prettier@^3.3.3:
-  version "3.3.3"
-  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.3.3.tgz#30c54fe0be0d8d12e6ae61dbb10109ea00d53105"
-  integrity sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==
 
 punycode@^2.1.0:
   version "2.3.1"

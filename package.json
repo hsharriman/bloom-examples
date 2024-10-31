@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@penrose/bloom": "^4.0.0-alpha.3",
+    "@penrose/bloom": "^4.0.0-alpha.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
