@@ -1,5 +1,6 @@
 import EquilateralTriangleConstruction from "./constructions/equilateral_triangle.tsx";
 import PerpendicularBisectorConstructor from "./constructions/perpendicular_bisector.tsx";
+import PythagoreanConstructor from "./constructions/pythagorean.tsx";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       }}>
         <EquilateralTriangleConstruction />
         <PerpendicularBisectorConstructor />
+        <PythagoreanConstructor />
       </div>
     </>
   );

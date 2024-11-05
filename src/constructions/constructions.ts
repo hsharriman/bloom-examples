@@ -3,6 +3,7 @@ import {
   canvas,
   Circle as BloomCircle,
   Line as BloomLine,
+  Equation as BloomEquation,
   ops,
   constraints, rayIntersectRect, Vec2,
 } from "@penrose/bloom";
@@ -14,6 +15,7 @@ export interface Point {
   y: Num;
   label: string;
   icon: BloomCircle;
+  text: BloomEquation;
 }
 
 export interface Segment {
@@ -49,28 +51,37 @@ export class ConstructionDomain {
 
   private readonly width: number;
   private readonly height: number;
-  private readonly db: DiagramBuilder;
+  public readonly db: DiagramBuilder;
 
   constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
-    this.db = new DiagramBuilder(canvas(width, height), "");
+    this.db = new DiagramBuilder(canvas(width, height), "abcd");
   }
 
-  mkPoint = (label: string, initPos?: [number, number]): Point => {
-    const x = this.db.input({ init: initPos?.[0]});
-    const y = this.db.input({ init: initPos?.[1]});
-    return {
+  mkPoint = (label: string, draggable: boolean = false, initPos?: [number, number]): Point => {
+    const x1 = this.db.input({ init: initPos?.[0]});
+    const y1 = this.db.input({ init: initPos?.[1]});
+    const x2 = this.db.input({ init: initPos?.[0]});
+    const y2 = this.db.input({ init: initPos?.[1]});
+    const p : Point = {
       tag: "Point",
-      x,
-      y,
+      x : x1,
+      y : y1,
       label,
       icon: this.db.circle({
-        center: [x, y],
+        center: [x1, y1],
         r: this.pointRadius,
         fillColor: this.pointColor,
+        drag: draggable,
+      }),
+      text: this.db.equation({
+        center: [x2, y2],
+        string: label
       })
     };
+    this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 15));
+    return p;
   }
 
   mkSegment = (point1: Point, point2: Point): Segment => {
@@ -167,6 +178,15 @@ export class ConstructionDomain {
 
   ensureDistinct = (point1: Point, point2: Point) => {
     this.db.ensure(constraints.disjoint(point1.icon, point2.icon));
+  }
+
+  ensurePerpendicular = (s1: Segment, s2: Segment) => {
+
+    // dot product the two normal vectors of the segments
+    const n1 = ops.vnormalize(ops.vsub([s1.point2.x, s1.point2.y], [s1.point1.x, s1.point1.y]));
+    const n2 = ops.vnormalize(ops.vsub([s2.point2.x, s2.point2.y], [s2.point1.x, s2.point1.y]));
+    this.db.ensure(constraints.equal(ops.vdot(n1, n2), 0));
+
   }
 
   build = async () => {
