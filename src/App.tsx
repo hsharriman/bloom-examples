@@ -1,6 +1,6 @@
-import EquilateralTriangleConstruction from "./constructions/equilateral_triangle.tsx";
-import PerpendicularBisectorConstructor from "./constructions/perpendicular_bisector.tsx";
-import PythagoreanConstructor from "./constructions/pythagorean.tsx";
+import ParallelLinesConstructor from "./constructions/parallel-lines";
+import PythagoreanComputedConstructor from "./constructions/pythagorean-computed";
+import PythagoreanConstructor from "./constructions/pythagorean";
 
 function App() {
   return (
@@ -10,9 +10,11 @@ function App() {
         flexDirection: "row",
         placeContent: "space-evenly",
       }}>
-        <EquilateralTriangleConstruction />
-        <PerpendicularBisectorConstructor />
+        {/* <EquilateralTriangleConstruction />
+        <PerpendicularBisectorConstructor /> */}
         <PythagoreanConstructor />
+        <PythagoreanComputedConstructor />
+        {/* <ParallelLinesConstructor /> */}
       </div>
     </>
   );

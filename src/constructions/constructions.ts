@@ -5,7 +5,12 @@ import {
   Line as BloomLine,
   Equation as BloomEquation,
   ops,
-  constraints, rayIntersectRect, Vec2,
+  constraints,
+  rayIntersectRect,
+  Vec2,
+  abs,
+  sub,
+  div,
 } from "@penrose/bloom";
 import { Num } from "@penrose/core";
 
@@ -13,9 +18,8 @@ export interface Point {
   tag: "Point";
   x: Num;
   y: Num;
-  label: string;
   icon: BloomCircle;
-  text: BloomEquation;
+  text?: BloomEquation;
 }
 
 export interface Segment {
@@ -23,6 +27,7 @@ export interface Segment {
   point1: Point;
   point2: Point;
   icon: BloomLine;
+  text?: BloomEquation;
 }
 
 export interface Line {
@@ -56,36 +61,71 @@ export class ConstructionDomain {
   constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
-    this.db = new DiagramBuilder(canvas(width, height), "abcd");
+    this.db = new DiagramBuilder(canvas(width, height), "abcd", 1000);
   }
 
-  mkPoint = (label: string, draggable: boolean = false, initPos?: [number, number]): Point => {
-    const x1 = this.db.input({ init: initPos?.[0]});
-    const y1 = this.db.input({ init: initPos?.[1]});
-    const x2 = this.db.input({ init: initPos?.[0]});
-    const y2 = this.db.input({ init: initPos?.[1]});
-    const p : Point = {
+  mkPointFixed = (label: string, x: Num, y: Num): Point => {
+    const x2 = this.db.input();
+    const y2 = this.db.input();
+    const p: Point = {
       tag: "Point",
-      x : x1,
-      y : y1,
-      label,
+      x: x,
+      y: y,
+      icon: this.db.circle({
+        center: [x, y],
+        r: this.pointRadius,
+        fillColor: this.pointColor,
+        drag: false,
+      }),
+    };
+    p.text = this.db.equation({
+      center: [x2, y2],
+      string: label,
+    });
+    this.db.ensure(constraints.equal(ops.vdist([x, y], [x2, y2]), 15));
+    return p;
+  };
+
+  mkPoint = (
+    label: string,
+    labeled: boolean = false,
+    draggable: boolean = false,
+    initPos?: [number, number]
+  ): Point => {
+    const x1 = this.db.input({ init: initPos?.[0] });
+    const y1 = this.db.input({ init: initPos?.[1] });
+    const x2 = this.db.input({ init: initPos?.[0] });
+    const y2 = this.db.input({ init: initPos?.[1] });
+    const p: Point = {
+      tag: "Point",
+      x: x1,
+      y: y1,
       icon: this.db.circle({
         center: [x1, y1],
         r: this.pointRadius,
         fillColor: this.pointColor,
         drag: draggable,
       }),
-      text: this.db.equation({
-        center: [x2, y2],
-        string: label
-      })
     };
-    this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 15));
+    // if (labeled) {
+    //   p.text = this.db.equation({
+    //     center: [x2, y2],
+    //     string: label,
+    //   });
+    //   // this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 15));
+    // }
     return p;
-  }
+  };
 
-  mkSegment = (point1: Point, point2: Point): Segment => {
-    return {
+  mkSegment = (
+    point1: Point,
+    point2: Point,
+    label?: string,
+    labeled: boolean = false
+  ): Segment => {
+    const x1 = this.db.input();
+    const y1 = this.db.input();
+    const s: Segment = {
       tag: "Segment",
       point1,
       point2,
@@ -96,7 +136,23 @@ export class ConstructionDomain {
         strokeColor: this.lineColor,
       }),
     };
-  }
+    // if (labeled) {
+    //   s.text = this.db.equation({
+    //     center: [x1, y1],
+    //     string: label,
+    //   });
+    //   this.db.ensure(
+    //     constraints.equal(
+    //       ops.vdist(
+    //         [x1, y1],
+    //         ops.vdiv(ops.vadd([point1.x, point1.y], [point2.x, point2.y]), 2)
+    //       ),
+    //       8
+    //     )
+    //   );
+    // }
+    return s;
+  };
 
   mkLine = (point1: Point, point2: Point): Line => {
     const p1: Vec2 = [point1.x, point1.y];
@@ -107,10 +163,10 @@ export class ConstructionDomain {
       [this.width / 2, this.height / 2],
       [-this.width / 2, this.height / 2],
       [-this.width / 2, -this.height / 2],
-      [this.width /2, -this.height / 2]
+      [this.width / 2, -this.height / 2],
     ];
     const start = rayIntersectRect(canvasRect, p1, disp);
-    const end  = rayIntersectRect(canvasRect, p1, ops.vmul(-1, disp) as Vec2);
+    const end = rayIntersectRect(canvasRect, p1, ops.vmul(-1, disp) as Vec2);
 
     return {
       tag: "Line",
@@ -124,7 +180,7 @@ export class ConstructionDomain {
         ensureOnCanvas: false,
       }),
     };
-  }
+  };
 
   mkCircle = (center: Point, circumferential: Point): Circle => {
     return {
@@ -133,13 +189,16 @@ export class ConstructionDomain {
       circumferential,
       icon: this.db.circle({
         center: [center.x, center.y],
-        r: ops.vdist([center.x, center.y], [circumferential.x, circumferential.y]),
+        r: ops.vdist(
+          [center.x, center.y],
+          [circumferential.x, circumferential.y]
+        ),
         fillColor: [0, 0, 0, 0],
         strokeWidth: this.circleThickness,
         strokeColor: this.circleColor,
-      })
+      }),
     };
-  }
+  };
 
   /**
    * Construct a point, and ensure that it intersects with the given shapes.
@@ -152,8 +211,13 @@ export class ConstructionDomain {
     for (const shape of shapes) {
       switch (shape.tag) {
         case "Circle": {
-          const r = ops.vdist([shape.center.x, shape.center.y], [shape.circumferential.x, shape.circumferential.y]);
-          this.db.ensure(constraints.equal(ops.vdist(p, [shape.center.x, shape.center.y]), r));
+          const r = ops.vdist(
+            [shape.center.x, shape.center.y],
+            [shape.circumferential.x, shape.circumferential.y]
+          );
+          this.db.ensure(
+            constraints.equal(ops.vdist(p, [shape.center.x, shape.center.y]), r)
+          );
           break;
         }
 
@@ -174,22 +238,45 @@ export class ConstructionDomain {
     }
 
     return point;
-  }
+  };
 
   ensureDistinct = (point1: Point, point2: Point) => {
     this.db.ensure(constraints.disjoint(point1.icon, point2.icon));
-  }
+  };
 
   ensurePerpendicular = (s1: Segment, s2: Segment) => {
-
-    // dot product the two normal vectors of the segments
-    const n1 = ops.vnormalize(ops.vsub([s1.point2.x, s1.point2.y], [s1.point1.x, s1.point1.y]));
-    const n2 = ops.vnormalize(ops.vsub([s2.point2.x, s2.point2.y], [s2.point1.x, s2.point1.y]));
+    // dot product the two normal vectors of the segments is zero
+    const n1 = ops.vnormalize(
+      ops.vsub([s1.point2.x, s1.point2.y], [s1.point1.x, s1.point1.y])
+    );
+    const n2 = ops.vnormalize(
+      ops.vsub([s2.point2.x, s2.point2.y], [s2.point1.x, s2.point1.y])
+    );
     this.db.ensure(constraints.equal(ops.vdot(n1, n2), 0));
+  };
 
-  }
+  ensureParallel = (s1: Segment, s2: Segment) => {
+    // dot product the two normal vectors of the segments is zeor
+    const n1 = ops.vnormalize(
+      ops.vsub([s1.point2.x, s1.point2.y], [s1.point1.x, s1.point1.y])
+    );
+    const n2 = ops.vnormalize(
+      ops.vsub([s2.point2.x, s2.point2.y], [s2.point1.x, s2.point1.y])
+    );
+    this.db.ensure(constraints.equal(ops.vdot(n1, n2), 1));
+  };
+
+  ensureEqualLength = (s1: Segment, s2: Segment) => {
+    // dot product the two normal vectors of the segments
+    this.db.ensure(
+      constraints.equal(
+        ops.vdist([s1.point2.x, s1.point2.y], [s1.point1.x, s1.point1.y]),
+        ops.vdist([s2.point2.x, s2.point2.y], [s2.point1.x, s2.point1.y])
+      )
+    );
+  };
 
   build = async () => {
     return this.db.build();
-  }
+  };
 }
