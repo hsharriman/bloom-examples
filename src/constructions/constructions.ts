@@ -107,13 +107,13 @@ export class ConstructionDomain {
         drag: draggable,
       }),
     };
-    // if (labeled) {
-    //   p.text = this.db.equation({
-    //     center: [x2, y2],
-    //     string: label,
-    //   });
-    //   // this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 15));
-    // }
+    if (labeled) {
+      p.text = this.db.equation({
+        center: [x2, y2],
+        string: label,
+      });
+      // this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 15));
+    }
     return p;
   };
 
@@ -136,21 +136,21 @@ export class ConstructionDomain {
         strokeColor: this.lineColor,
       }),
     };
-    // if (labeled) {
-    //   s.text = this.db.equation({
-    //     center: [x1, y1],
-    //     string: label,
-    //   });
-    //   this.db.ensure(
-    //     constraints.equal(
-    //       ops.vdist(
-    //         [x1, y1],
-    //         ops.vdiv(ops.vadd([point1.x, point1.y], [point2.x, point2.y]), 2)
-    //       ),
-    //       8
-    //     )
-    //   );
-    // }
+    if (labeled) {
+      s.text = this.db.equation({
+        center: [x1, y1],
+        string: label,
+      });
+      this.db.ensure(
+        constraints.equal(
+          ops.vdist(
+            [x1, y1],
+            ops.vdiv(ops.vadd([point1.x, point1.y], [point2.x, point2.y]), 2)
+          ),
+          8
+        )
+      );
+    }
     return s;
   };
 
