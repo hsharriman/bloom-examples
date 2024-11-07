@@ -2,19 +2,27 @@ import { ConstructionDomain } from "./constructions.js";
 import { Renderer, useDiagram, ops, add, sub } from "@penrose/bloom";
 
 const buildDiagram = async () => {
-  const cd = new ConstructionDomain(400, 400);
+  const width=600;
+  const height=600;
+  const margin = 10;
+  const leftEdge = -width/2 + margin;
+  const topEdge = height/2 - margin;
+  const cd = new ConstructionDomain(width, height);
 
   const X = cd.mkPoint("X", true, true);
-  const Y = cd.mkPoint("Y", true, true);
+  const Y = cd.mkPointFixed("Y", leftEdge, topEdge);
   const Z = cd.mkPoint("Z", true, true);
   const XY = cd.mkSegment(X, Y, "a", true);
   const a = ops.vdist([X.x, X.y],[Y.x, Y.y])
   const YZ = cd.mkSegment(Y, Z, "b", true);
   const b = ops.vdist([Z.x, Z.y],[Y.x, Y.y])
   cd.mkSegment(X, Z, "c", true);
-  cd.ensurePerpendicular(XY, YZ);
+  cd.ensureX(X, Y.x);
+  cd.ensureY(Z, Y.y);
 
-  const A = cd.mkPoint("A", true, true);
+
+
+  const A = cd.mkPointFixed("A", leftEdge, 100);
   const P = cd.mkPointFixed("P", add(A.x, b), A.y);
   const B = cd.mkPointFixed("B", add(P.x, a), P.y);
   const Q = cd.mkPointFixed("Q", B.x, sub(B.y, b));

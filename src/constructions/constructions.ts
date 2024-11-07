@@ -8,11 +8,16 @@ import {
   constraints,
   rayIntersectRect,
   Vec2,
-  abs,
+  pow,
+  add,
+  sqrt,
   sub,
   div,
+  mul,
+  ifCond,
+  eq,
 } from "@penrose/bloom";
-import { Num } from "@penrose/core";
+import { gt, Num } from "@penrose/core";
 
 export interface Point {
   tag: "Point";
@@ -47,7 +52,7 @@ export interface Circle {
 export type Shape = Point | Segment | Line | Circle;
 
 export class ConstructionDomain {
-  private readonly pointRadius = 4;
+  private readonly pointRadius = 2;
   private readonly pointColor = [0, 0, 0, 1];
   private readonly lineThickness = 2;
   private readonly lineColor = [0, 0, 0, 1];
@@ -61,7 +66,7 @@ export class ConstructionDomain {
   constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
-    this.db = new DiagramBuilder(canvas(width, height), "abcd", 1000);
+    this.db = new DiagramBuilder(canvas(width, height), "abcd", 1);
   }
 
   mkPointFixed = (label: string, x: Num, y: Num): Point => {
@@ -81,8 +86,9 @@ export class ConstructionDomain {
     p.text = this.db.equation({
       center: [x2, y2],
       string: label,
+      fontSize: "8px"
     });
-    this.db.ensure(constraints.equal(ops.vdist([x, y], [x2, y2]), 15));
+    this.db.ensure(constraints.equal(ops.vdist([x, y], [x2, y2]), 8));
     return p;
   };
 
@@ -111,11 +117,30 @@ export class ConstructionDomain {
       p.text = this.db.equation({
         center: [x2, y2],
         string: label,
+        fontSize: "8px"
       });
-      this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 15));
+      this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 8));
     }
     return p;
   };
+
+  private perp_point(p1: Point, p2: Point, d: Num): Vec2 {
+    // Calculate the midpoint of the line segment
+    const midpoint_x = div(add(p1.x, p2.x), 2);
+    const midpoint_y = div(add(p1.y, p2.y), 2);
+    
+    // Calculate the slope of the line segment
+    // add small epsilon to avoid division by zero in calculation of perpendicular slope
+    const slope = add(div(sub(p2.y, p1.y), sub(p2.x, p1.x)), 0.0000001);
+
+    // Calculate the perpendicular slope
+    const perp_slope = div(-1, slope);
+
+    // Calculate the new point
+    const new_x = add(midpoint_x, div(d, sqrt(add(1, pow(perp_slope, 2)))));
+    const new_y = add(mul(perp_slope, sub(new_x, midpoint_x)), midpoint_y);
+    return [new_x, new_y];
+  }
 
   mkSegment = (
     point1: Point,
@@ -123,8 +148,6 @@ export class ConstructionDomain {
     label?: string,
     labeled: boolean = false
   ): Segment => {
-    const x1 = this.db.input();
-    const y1 = this.db.input();
     const s: Segment = {
       tag: "Segment",
       point1,
@@ -138,18 +161,10 @@ export class ConstructionDomain {
     };
     if (labeled) {
       s.text = this.db.equation({
-        center: [x1, y1],
+        center: this.perp_point(point1, point2, 5),
         string: label,
+        fontSize: "8px"
       });
-      this.db.ensure(
-        constraints.equal(
-          ops.vdist(
-            [x1, y1],
-            ops.vdiv(ops.vadd([point1.x, point1.y], [point2.x, point2.y]), 2)
-          ),
-          8
-        )
-      );
     }
     return s;
   };
@@ -275,6 +290,14 @@ export class ConstructionDomain {
       )
     );
   };
+
+  ensureX(p: Point, x: Num) {
+    this.db.ensure(constraints.equal(p.x, x));
+  }
+
+  ensureY(p: Point, y: Num) {
+    this.db.ensure(constraints.equal(p.y, y));
+  }
 
   build = async () => {
     return this.db.build();

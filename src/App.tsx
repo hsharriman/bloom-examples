@@ -12,7 +12,7 @@ function App() {
       }}>
         {/* <EquilateralTriangleConstruction />
         <PerpendicularBisectorConstructor /> */}
-        <PythagoreanConstructor />
+        {/* <PythagoreanConstructor /> */}
         <PythagoreanComputedConstructor />
         {/* <ParallelLinesConstructor /> */}
       </div>
