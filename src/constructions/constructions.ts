@@ -112,7 +112,7 @@ export class ConstructionDomain {
         center: [x2, y2],
         string: label,
       });
-      // this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 15));
+      this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 15));
     }
     return p;
   };
