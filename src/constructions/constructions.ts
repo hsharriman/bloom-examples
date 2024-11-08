@@ -4,6 +4,8 @@ import {
   Circle as BloomCircle,
   Line as BloomLine,
   Equation as BloomEquation,
+  Polygon as BloomPolygon,
+  Color,
   ops,
   constraints,
   rayIntersectRect,
@@ -49,6 +51,11 @@ export interface Circle {
   icon: BloomCircle;
 }
 
+export interface Triangle {
+  tag: "Triangle";
+  icon: BloomPolygon;
+}
+
 export type Shape = Point | Segment | Line | Circle;
 
 export class ConstructionDomain {
@@ -56,7 +63,7 @@ export class ConstructionDomain {
   private readonly pointColor = [0, 0, 0, 1];
   private readonly lineThickness = 2;
   private readonly lineColor = [0, 0, 0, 1];
-  private readonly circleThickness = 2;
+  private readonly circleThickness = 4;
   private readonly circleColor = [0, 0, 0, 1];
 
   private readonly width: number;
@@ -69,7 +76,7 @@ export class ConstructionDomain {
     this.db = new DiagramBuilder(canvas(width, height), "abcd", 1);
   }
 
-  mkPointFixed = (label: string, x: Num, y: Num): Point => {
+  mkPointFixed = (label: string, x: Num, y: Num, labeled:boolean = false): Point => {
     const x2 = this.db.input();
     const y2 = this.db.input();
     const p: Point = {
@@ -83,12 +90,14 @@ export class ConstructionDomain {
         drag: false,
       }),
     };
-    p.text = this.db.equation({
-      center: [x2, y2],
-      string: label,
-      fontSize: "8px"
-    });
-    this.db.ensure(constraints.equal(ops.vdist([x, y], [x2, y2]), 8));
+    if(labeled) {
+      p.text = this.db.equation({
+        center: [x2, y2],
+        string: label,
+        fontSize: "8px"
+      });
+      this.db.ensure(constraints.equal(ops.vdist([x, y], [x2, y2]), 8));
+    }
     return p;
   };
 
@@ -100,8 +109,8 @@ export class ConstructionDomain {
   ): Point => {
     const x1 = this.db.input({ init: initPos?.[0] });
     const y1 = this.db.input({ init: initPos?.[1] });
-    const x2 = this.db.input({ init: initPos?.[0] });
-    const y2 = this.db.input({ init: initPos?.[1] });
+    const x2 = this.db.input();
+    const y2 = this.db.input();
     const p: Point = {
       tag: "Point",
       x: x1,
@@ -124,7 +133,23 @@ export class ConstructionDomain {
     return p;
   };
 
+  mkTriangle = (p1: Point, p2: Point, p3: Point, c : Color): Triangle => {
+    return {
+      tag: "Triangle",
+      icon: this.db.polygon({
+        points: [
+          [p1.x, p1.y],
+          [p2.x, p2.y],
+          [p3.x, p3.y],
+        ],
+        fillColor: c,
+        strokeWidth: this.lineThickness,
+      }),
+    };
+  };
+
   private perp_point(p1: Point, p2: Point, d: Num): Vec2 {
+    // this doesn't work for some reason: JSS
     // Calculate the midpoint of the line segment
     const midpoint_x = div(add(p1.x, p2.x), 2);
     const midpoint_y = div(add(p1.y, p2.y), 2);
@@ -148,6 +173,8 @@ export class ConstructionDomain {
     label?: string,
     labeled: boolean = false
   ): Segment => {
+    const label_x = this.db.input();
+    const label_y = this.db.input();
     const s: Segment = {
       tag: "Segment",
       point1,
@@ -161,11 +188,14 @@ export class ConstructionDomain {
     };
     if (labeled) {
       s.text = this.db.equation({
-        center: this.perp_point(point1, point2, 5),
+        center: [label_x, label_y],
         string: label,
         fontSize: "8px"
       });
     }
+    const midpoint_x = div(add(point1.x, point2.x),2);
+    const midpoint_y = div(add(point1.y, point2.y),2);
+    this.db.ensure(constraints.equal(ops.vdist([midpoint_x, midpoint_y], [label_x, label_y]), 8));
     return s;
   };
 
@@ -289,6 +319,15 @@ export class ConstructionDomain {
         ops.vdist([s2.point2.x, s2.point2.y], [s2.point1.x, s2.point1.y])
       )
     );
+  };
+
+  ensureDisjoint = (t: Triangle, segments : Segment[]) => {
+    // dot product the two normal vectors of the segments
+    for(const s of segments) {
+      if(s.text) {
+        this.db.ensure(constraints.disjoint(t.icon, s.text));
+      }
+    }
   };
 
   ensureX(p: Point, x: Num) {
