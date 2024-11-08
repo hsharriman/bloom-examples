@@ -23,7 +23,6 @@ const buildDiagram = async () => {
   cd.mkSegment(Z, X, "c", true);
   cd.ensureX(X, Y.x);
   cd.ensureY(Z, Y.y);
-  cd.db.addDragConstraints();
 
 
   const A = cd.mkPointFixed("A", square1_x, square1_y, false);
@@ -95,8 +94,7 @@ export default function PythagoreanComputedConstructor() {
       <div
         style={{
           width: "50em",
-          height: "50em",
-          border: "3px solid black",
+          height: "50em"
         }}
       >
         <Renderer diagram={diagram} />

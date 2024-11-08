@@ -94,7 +94,7 @@ export class ConstructionDomain {
       p.text = this.db.equation({
         center: [x2, y2],
         string: label,
-        fontSize: "8px"
+        fontSize: "10px"
       });
       this.db.ensure(constraints.equal(ops.vdist([x, y], [x2, y2]), 8));
     }
@@ -117,8 +117,8 @@ export class ConstructionDomain {
       y: y1,
       icon: this.db.circle({
         center: [x1, y1],
-        r: this.pointRadius,
-        fillColor: this.pointColor,
+        r: 8,
+        fillColor: [0,0,0,.5],
         drag: draggable,
       }),
     };
@@ -183,7 +183,7 @@ export class ConstructionDomain {
       s.text = this.db.equation({
         center: label_loc,
         string: label,
-        fontSize: "8px"
+        fontSize: "10px"
       });
     }
     // const midpoint_x = div(add(point1.x, point2.x),2);
