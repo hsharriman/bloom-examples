@@ -323,12 +323,18 @@ export class ConstructionDomain {
     }
   };
 
-  ensureX(p: Point, x: Num) {
-    this.db.ensure(constraints.equal(p.x, x));
+  ensureX(p: Point, x_fixed: Num) {
+    this.db.ensure(constraints.equal(p.x, x_fixed));
+    p.icon.dragConstraint = ([x, y]: [number, number]): [number, number] => {
+      return [x_fixed as number, y];
+    }
   }
 
-  ensureY(p: Point, y: Num) {
-    this.db.ensure(constraints.equal(p.y, y));
+  ensureY(p: Point, y_fixed: Num) {
+    this.db.ensure(constraints.equal(p.y, y_fixed));
+    p.icon.dragConstraint = ([x, y]: [number, number]): [number, number] => {
+      return [x, y_fixed as number];
+    }
   }
 
   build = async () => {

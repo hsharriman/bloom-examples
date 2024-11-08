@@ -23,6 +23,8 @@ const buildDiagram = async () => {
   cd.mkSegment(Z, X, "c", true);
   cd.ensureX(X, Y.x);
   cd.ensureY(Z, Y.y);
+  cd.db.addDragConstraints();
+
 
   const A = cd.mkPointFixed("A", square1_x, square1_y, false);
   const P = cd.mkPointFixed("P", add(A.x, b), A.y, false);
