@@ -148,23 +148,15 @@ export class ConstructionDomain {
     };
   };
 
-  private perp_point(p1: Point, p2: Point, d: Num): Vec2 {
+  private perp_point(p1: Point, p2: Point, d: Num): Num[] {
     // this doesn't work for some reason: JSS
     // Calculate the midpoint of the line segment
-    const midpoint_x = div(add(p1.x, p2.x), 2);
-    const midpoint_y = div(add(p1.y, p2.y), 2);
-    
-    // Calculate the slope of the line segment
-    // add small epsilon to avoid division by zero in calculation of perpendicular slope
-    const slope = add(div(sub(p2.y, p1.y), sub(p2.x, p1.x)), 0.0000001);
+    const midpoint = ops.vdiv(ops.vadd([p1.x, p1.y], [p2.x, p2.y]), 2);
 
-    // Calculate the perpendicular slope
-    const perp_slope = div(-1, slope);
-
-    // Calculate the new point
-    const new_x = add(midpoint_x, div(d, sqrt(add(1, pow(perp_slope, 2)))));
-    const new_y = add(mul(perp_slope, sub(new_x, midpoint_x)), midpoint_y);
-    return [new_x, new_y];
+    const vec = ops.vsub([p2.x, p2.y], [p1.x, p1.y]);
+    const perp_vec = ops.rot90(ops.vnormalize(vec));
+    const new_point : Num[] = ops.vadd(midpoint, ops.vmul(d, perp_vec));
+    return new_point;
   }
 
   mkSegment = (
@@ -173,8 +165,8 @@ export class ConstructionDomain {
     label?: string,
     labeled: boolean = false
   ): Segment => {
-    const label_x = this.db.input();
-    const label_y = this.db.input();
+    // const label_x = this.db.input();
+    // const label_y = this.db.input();
     const s: Segment = {
       tag: "Segment",
       point1,
@@ -187,15 +179,16 @@ export class ConstructionDomain {
       }),
     };
     if (labeled) {
+      const label_loc = this.perp_point(point1, point2, 5) as Vec2;
       s.text = this.db.equation({
-        center: [label_x, label_y],
+        center: label_loc,
         string: label,
         fontSize: "8px"
       });
     }
-    const midpoint_x = div(add(point1.x, point2.x),2);
-    const midpoint_y = div(add(point1.y, point2.y),2);
-    this.db.ensure(constraints.equal(ops.vdist([midpoint_x, midpoint_y], [label_x, label_y]), 8));
+    // const midpoint_x = div(add(point1.x, point2.x),2);
+    // const midpoint_y = div(add(point1.y, point2.y),2);
+    // this.db.ensure(constraints.equal(ops.vdist([midpoint_x, midpoint_y], [label_x, label_y]), 8));
     return s;
   };
 
