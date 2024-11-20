@@ -9,8 +9,8 @@ export const DiagramComponent = (props: DiagramComponentProps): JSX.Element => {
   return (
     <div
       style={{
-        width: "50em",
-        height: "50em",
+        width: "40em",
+        height: "40em",
         border: "3px solid black",
       }}
     >

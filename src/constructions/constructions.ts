@@ -43,7 +43,6 @@ export interface Circle {
   icon: BloomCircle;
 }
 
-// TODO rename these
 export interface Triangle {
   tag: "Triangle";
   p1p2: Segment;
@@ -55,6 +54,13 @@ export interface Triangle {
   icon: BloomPolygon;
 }
 
+export interface Angle {
+  tag: "Angle";
+  vertex: Point;
+  start: Point;
+  end: Point;
+}
+
 export type Shape = Point | Segment | Line | Circle;
 
 export class ConstructionDomain {
@@ -64,6 +70,7 @@ export class ConstructionDomain {
   private readonly lineColor = [0, 0, 0, 1];
   private readonly circleThickness = 3;
   private readonly circleColor = [0, 0, 0, 1];
+  private readonly minSegmentLen = 30;
 
   private readonly width: number;
   private readonly height: number;
@@ -138,7 +145,7 @@ export class ConstructionDomain {
   };
 
   mkTriangle = (p1: Point, p2: Point, p3: Point, c: Color): Triangle => {
-    return {
+    const t: Triangle = {
       tag: "Triangle",
       p1p2: this.mkSegment(p1, p2),
       p2p3: this.mkSegment(p2, p3),
@@ -155,6 +162,16 @@ export class ConstructionDomain {
         fillColor: c,
         strokeWidth: this.lineThickness,
       }),
+    };
+    return t;
+  };
+
+  mkAngle = (vertex: Point, start: Point, end: Point): Angle => {
+    return {
+      tag: "Angle",
+      vertex,
+      start,
+      end,
     };
   };
 
@@ -196,6 +213,12 @@ export class ConstructionDomain {
         fontSize: "10px",
       });
     }
+    this.db.encourage(
+      constraints.greaterThan(
+        ops.vdist([point1.x, point1.y], [point2.x, point2.y]),
+        this.minSegmentLen
+      )
+    );
     // const midpoint_x = div(add(point1.x, point2.x),2);
     // const midpoint_y = div(add(point1.y, point2.y),2);
     // this.db.ensure(constraints.equal(ops.vdist([midpoint_x, midpoint_y], [label_x, label_y]), 8));
@@ -357,6 +380,25 @@ export class ConstructionDomain {
       return [x, y_fixed as number];
     };
   }
+
+  ensureEqualAngle = (a1: Angle, a2: Angle) => {
+    // calculate vectors for both segments that make up the angles
+    const segmentVec = (p1: Point, p2: Point): Num[] =>
+      ops.vsub([p1.x, p1.y], [p2.x, p2.y]);
+
+    const [u1, v1] = [
+      segmentVec(a1.start, a1.vertex),
+      segmentVec(a1.end, a1.vertex),
+    ];
+    const [u2, v2] = [
+      segmentVec(a2.start, a2.vertex),
+      segmentVec(a2.end, a2.vertex),
+    ];
+
+    this.db.ensure(
+      constraints.equal(ops.angleBetween(u1, v1), ops.angleBetween(u2, v2))
+    );
+  };
 
   build = async () => {
     return this.db.build();

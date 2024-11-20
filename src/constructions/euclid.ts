@@ -1,6 +1,13 @@
 import { Color, constraints, objectives, ops } from "@penrose/bloom";
-import { ConstructionDomain, Point, Segment, Triangle } from "./constructions";
+import {
+  Angle,
+  ConstructionDomain,
+  Point,
+  Segment,
+  Triangle,
+} from "./constructions";
 
+// TODO trying to figure out whether to stick with Euclid's elements or go more generic
 export class EuclidConstruction extends ConstructionDomain {
   mkSegmentFixedLen = (p1: Point, p2: Point, length: number): Segment => {
     const s = this.mkSegment(p1, p2);
@@ -10,16 +17,15 @@ export class EuclidConstruction extends ConstructionDomain {
     return s;
   };
 
-  // Postulate 1
-  lineBetweenPoints = (p1: Point, p2: Point): Segment => {
-    return this.mkSegment(p1, p2);
-  };
-
   // Postulate 2
   // p1, p2 should be from an existing segment
   extendLine = ([p1, p2]: [Point, Point], p3: Point): Segment => {
     const s2 = this.mkSegment(p2, p3);
     this.ensureCollinearOrdered(p1, p2, p3);
+    const minLen = 100;
+    this.db.encourage(
+      objectives.greaterThan(ops.vdist([p2.x, p2.y], [p3.x, p3.y]), minLen)
+    );
     return s2;
   };
 
@@ -43,7 +49,8 @@ export class EuclidConstruction extends ConstructionDomain {
   };
 
   // Proposition 2
-  moveSegment = (
+  // TODO not used
+  copySegment = (
     s: Segment,
     p: Point,
     pLabel: string,
@@ -62,5 +69,13 @@ export class EuclidConstruction extends ConstructionDomain {
     const s = this.mkSegmentFixedLen(p1, p2, length);
     this.ensureCollinearOrdered(p1, p2, p3);
     return s;
+  };
+
+  // Cut an angle in half between a.vertex and p
+  angleBisector = (a: Angle, p: Point): Segment => {
+    const a1 = this.mkAngle(a.vertex, a.start, p);
+    const a2 = this.mkAngle(a.vertex, a.end, p);
+    this.ensureEqualAngle(a1, a2);
+    return this.mkSegment(a.vertex, p);
   };
 }
