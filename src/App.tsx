@@ -1,6 +1,7 @@
 import ParallelLinesConstructor from "./constructions/parallel-lines";
 import PythagoreanComputedConstructor from "./constructions/pythagorean-computed";
 import PythagoreanConstructor from "./constructions/pythagorean";
+import ElementsTest from "./elements/elements_test";
 
 function App() {
   return (
@@ -13,8 +14,9 @@ function App() {
         {/* <EquilateralTriangleConstruction />
         <PerpendicularBisectorConstructor /> */}
         {/* <PythagoreanConstructor /> */}
-        <PythagoreanComputedConstructor />
+        {/*<PythagoreanComputedConstructor />*/}
         {/* <ParallelLinesConstructor /> */}
+        <ElementsTest />
       </div>
     </>
   );
