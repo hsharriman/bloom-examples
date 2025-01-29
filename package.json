@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@penrose/bloom": "^4.0.0-alpha.5",
+    "@penrose/core": "file:../penrose/packages/core",
+    "@penrose/bloom": "file:../penrose/packages/bloom",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "vite-plugin-wasm": "^3.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
