@@ -10,11 +10,10 @@ import {
   Circle as BloomCircle,
   Equation as BloomEquation,
   Line as BloomLine,
-  Shape as BloomShape,
   Vec2,
   dot,
   max,
-  min,
+  min, abs, sub,
 } from "@penrose/bloom";
 
 export interface ConstructionElementCommon {
@@ -110,18 +109,18 @@ export class Construction {
 
     let cx: Num;
     if (x === undefined) {
-      cx = this.db.input();
+      cx = this.db.input({ name: `${id}-x`});
     } else if (draggable) {
-      cx = this.db.input({ init: x, optimized: false });
+      cx = this.db.input({ name: `${id}-x`, init: x, optimized: false });
     } else {
       cx = x;
     }
 
     let cy: Num;
     if (y === undefined) {
-      cy = this.db.input();
+      cy = this.db.input({ name: `${id}-y` });
     } else if (draggable) {
-      cy = this.db.input({ init: y, optimized: false });
+      cy = this.db.input({ name: `${id}-y`, init: y, optimized: false });
     } else {
       cy = y;
     }
@@ -132,7 +131,6 @@ export class Construction {
       center: [cx, cy],
       drag: draggable,
     });
-    this.ensureDisjointWithLabels(icon);
 
     let label_ = undefined;
     if (label !== undefined) {
@@ -158,7 +156,7 @@ export class Construction {
       id,
     };
 
-    this.elements.push(point);
+    this.addElement(point);
     return point;
   }
 
@@ -169,7 +167,6 @@ export class Construction {
       strokeWidth: lineLikeWidth,
       strokeColor: lineLikeColor,
     });
-    this.ensureDisjointWithLabels(icon);
 
     let label_ = undefined;
     if (label !== undefined) {
@@ -204,7 +201,7 @@ export class Construction {
       label: label_,
     };
 
-    this.elements.push(segment);
+    this.addElement(segment);
     return segment;
   }
 
@@ -213,13 +210,12 @@ export class Construction {
     const midpoint = ops.vmul(0.5, ops.vadd(point1.pos, point2.pos));
 
     const icon = this.db.line({
-      start: ops.vadd(midpoint, ops.vmul(100, lineNorm)) as Vec2,
-      end: ops.vadd(midpoint, ops.vmul(-100, lineNorm)) as Vec2,
+      start: ops.vadd(midpoint, ops.vmul(1000, lineNorm)) as Vec2,
+      end: ops.vadd(midpoint, ops.vmul(-1000, lineNorm)) as Vec2,
       strokeWidth: lineLikeWidth,
       strokeColor: lineLikeColor,
       ensureOnCanvas: false,
     });
-    this.ensureDisjointWithLabels(icon);
 
     let label_ = undefined;
     if (label !== undefined) {
@@ -252,7 +248,7 @@ export class Construction {
       label: label_,
     };
 
-    this.elements.push(line);
+    this.addElement(line);
     return line;
   }
 
@@ -263,8 +259,8 @@ export class Construction {
       fillColor: [0, 0, 0, 0],
       strokeWidth: circleWidth,
       strokeColor: circleColor,
+      ensureOnCanvas: false,
     });
-    this.ensureDisjointWithLabels(icon);
 
     let label_ = undefined;
     if (label !== undefined) {
@@ -292,37 +288,64 @@ export class Construction {
         name: `selected-circ-${center.id}-${circumferential.id}`,
         optimized: false
       })],
+      ensureOnCanvas: false,
     });
 
     this.db.layer(selectedIcon, icon);
 
-    this.elements.push(circle);
+    this.addElement(circle);
     return circle;
   }
 
-  mkSegmentSegmentIntersection = (s1: Segment, s2: Segment) : Point => {
-    const p = this.mkPoint();
-    this.db.ensure(constraints.collinearOrdered(s1.point1.pos, p.pos, s1.point2.pos));
-    this.db.ensure(constraints.collinearOrdered(s2.point1.pos, p.pos, s2.point2.pos));
-    return p;
-  }
+  mkIntersections = (element1: ConstructionElement, element2: ConstructionElement) : Point[] => {
+    switch (element1.tag) {
+      case "Segment": {
+        switch (element2.tag) {
+          case "Segment": {
+            return [this.mkSegmentSegmentIntersection(element1, element2)];
+          }
 
-  mkCircleCircleIntersection = (c1: Circle, c2: Circle) : [Point, Point] => {
-    const p1 = this.mkPoint();
-    const p2 = this.mkPoint();
+          case "Line": {
+            return [this.mkLineSegmentIntersection(element2, element1)];
+          }
 
-    for (const constr of pointsAreCircleIntersections(
-        p1.pos, p2.pos,
-        [c1.center.pos, c1.circumferential.pos],
-        [c2.center.pos, c2.circumferential.pos]
-    )) {
-      this.db.ensure(constr);
+          default:
+            throw new Error("Invalid intersection");
+        }
+      }
+
+      case "Line": {
+        switch (element2.tag) {
+          case "Line": {
+            return [this.mkLineLineIntersection(element1, element2)];
+          }
+
+          case "Segment": {
+            return [this.mkLineSegmentIntersection(element1, element2)];
+          }
+
+          default:
+            throw new Error("Invalid intersection");
+        }
+      }
+
+      case "Circle": {
+        switch (element2.tag) {
+          case "Circle": {
+            return this.mkCircleCircleIntersection(element1, element2);
+          }
+
+          default:
+            throw new Error("Invalid intersection");
+        }
+      }
+
+      default:
+        throw new Error("Invalid intersection");
     }
-
-    return [p1, p2];
   }
 
-  toggleSelect = (element: ConstructionElement) : void => {
+  setSelected = (element: ConstructionElement, active = true) : void => {
     let input;
     switch (element.tag) {
       case "Point": {
@@ -346,10 +369,31 @@ export class Construction {
       }
     }
 
-    input.val = 1 - input.val;
+    input.val = active ? 1 : 0;
   };
 
-  build = () : Promise<Diagram> => {
+  build = (currDiagram?: Diagram) : Promise<Diagram> => {
+    if (currDiagram) {
+      // match up point coordinates, if possible
+      for (const el of this.elements) {
+        if (el.tag === "Point") {
+          try {
+            const x = currDiagram.getInput(`${el.id}-x`);
+            if (typeof el.pos[0] === "object" && el.pos[0].tag === "Var") {
+              el.pos[0].val = x;
+            }
+          } catch { /* empty */ }
+
+          try {
+            const y = currDiagram.getInput(`${el.id}-y`);
+            if (typeof el.pos[1] === "object" && el.pos[1].tag === "Var") {
+              el.pos[1].val = y;
+            }
+          } catch { /* empty */ }
+        }
+      }
+    }
+
     return this.db.build();
   }
 
@@ -365,9 +409,93 @@ export class Construction {
     return label;
   }
 
-  private ensureDisjointWithLabels = (icon : BloomShape) => {
-    for (const label of this.labels) {
-      this.db.ensure(constraints.disjoint(icon, label, 5));
+  private addElement = (element: ConstructionElement) => {
+    this.createLayering(element);
+    this.updateLabelConstraints(element);
+    this.elements.push(element);
+  };
+
+  private createLabelConstraint = (element: ConstructionElement, label: BloomEquation) => {
+    switch (element.tag) {
+      case "Point":
+      case "Segment":
+      case "Line": {
+        this.db.ensure(constraints.disjoint(label, element.icon, labelDistMin));
+        break;
+      }
+
+      case "Circle": {
+        const distToCenter = ops.vdist(label.center, element.icon.center);
+        const distToCircumference = abs(sub(element.icon.r, distToCenter));
+        this.db.ensure(constraints.greaterThan(distToCircumference, labelDistMin));
+        break;
+      }
     }
   }
+
+  private updateLabelConstraints = (element: ConstructionElement) => {
+    if (element.label) {
+      for (const other of this.elements) {
+        this.createLabelConstraint(other, element.label);
+      }
+    }
+
+    for (const label of this.labels) {
+      this.createLabelConstraint(element, label);
+    }
+  }
+
+  private createLayering = (element: ConstructionElement) => {
+    // layer non-points below points to ensure selection works properly
+    if (element.tag !== "Point") {
+      for (const el of this.elements) {
+        if (el.tag === "Point") {
+          this.db.layer(element.icon, el.icon);
+        }
+      }
+    }
+  }
+
+  private mkSegmentSegmentIntersection = (s1: Segment, s2: Segment) : Point => {
+    const p = this.mkPoint();
+    this.db.ensure(constraints.collinearOrdered(s1.point1.pos, p.pos, s1.point2.pos));
+    this.db.ensure(constraints.collinearOrdered(s2.point1.pos, p.pos, s2.point2.pos));
+    return p;
+  }
+
+  private mkLineLineIntersection = (l1: Line, l2: Line) : Point => {
+    const p = this.mkPoint();
+    this.db.ensure(constraints.collinear(l1.point1.pos, p.pos, l1.point2.pos));
+    this.db.ensure(constraints.collinear(l2.point1.pos, p.pos, l2.point2.pos));
+    return p;
+  }
+
+  private mkLineSegmentIntersection = (l: Line, s: Segment) : Point => {
+    const p = this.mkPoint();
+    this.db.ensure(constraints.collinear(l.point1.pos, p.pos, l.point2.pos));
+    this.db.ensure(constraints.collinearOrdered(s.point1.pos, p.pos, s.point2.pos));
+    return p;
+  }
+
+  private mkCircleCircleIntersection = (c1: Circle, c2: Circle) : [Point, Point] => {
+    const p1 = this.mkPoint();
+    const p2 = this.mkPoint();
+
+    for (const constr of pointsAreCircleIntersections(
+      p1.pos, p2.pos,
+      [c1.center.pos, c1.circumferential.pos],
+      [c2.center.pos, c2.circumferential.pos]
+    )) {
+      this.db.ensure(constr);
+    }
+
+    return [p1, p2];
+  }
 }
+
+export type ConstructionAction =
+  | "mkPoint"
+  | "mkSegment"
+  | "mkLine"
+  | "mkCircle"
+  | "mkIntersections";

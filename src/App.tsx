@@ -1,7 +1,7 @@
-import ParallelLinesConstructor from "./constructions/parallel-lines";
-import PythagoreanComputedConstructor from "./constructions/pythagorean-computed";
-import PythagoreanConstructor from "./constructions/pythagorean";
-import ElementsTest from "./elements/elements_test";
+// import ParallelLinesConstructor from "./constructions/parallel-lines";
+// import PythagoreanComputedConstructor from "./constructions/pythagorean-computed";
+// import PythagoreanConstructor from "./constructions/pythagorean";
+import ElementsTest from "./elements/elements-walkthrough";
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
         {/* <PythagoreanConstructor /> */}
         {/*<PythagoreanComputedConstructor />*/}
         {/* <ParallelLinesConstructor /> */}
-        <ElementsTest />
+        <ElementsTest walkthroughName="bisector" />
       </div>
     </>
   );
