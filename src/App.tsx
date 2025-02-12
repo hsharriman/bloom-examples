@@ -2,6 +2,7 @@
 // import PythagoreanComputedConstructor from "./constructions/pythagorean-computed";
 // import PythagoreanConstructor from "./constructions/pythagorean";
 import ElementsTest from "./elements/elements-walkthrough";
+import CircleAreaDiagram from "./visual-proofs/circle-area.tsx";
 
 function App() {
   return (
@@ -16,7 +17,8 @@ function App() {
         {/* <PythagoreanConstructor /> */}
         {/*<PythagoreanComputedConstructor />*/}
         {/* <ParallelLinesConstructor /> */}
-        <ElementsTest walkthroughName="bisector" />
+        {/*<ElementsTest walkthroughName="bisector" />*/}
+        <CircleAreaDiagram />
       </div>
     </>
   );

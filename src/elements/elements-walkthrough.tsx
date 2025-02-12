@@ -78,7 +78,7 @@ export default function ElementsWalkthrough(
         // @ts-expect-error Spreading args is illegal for unknown lengths
         const results = construction[step.action](...args);
 
-        // construction actions may return a single element, or an array
+        // construction actions may return a single element, or ayarnn array
         if (results instanceof Array) {
           results.map((result, i) => nameElementMap.set(step.resultNames[i], result));
         } else {
