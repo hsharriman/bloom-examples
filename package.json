@@ -10,10 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@penrose/core": "file:../penrose/packages/core",
     "@penrose/bloom": "file:../penrose/packages/bloom",
+    "@penrose/core": "file:../penrose/packages/core",
+    "@tailwindcss/vite": "^4.0.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "tailwindcss": "^4.0.6",
     "vite-plugin-wasm": "^3.4.1"
   },
   "devDependencies": {
