@@ -1,57 +1,22 @@
 import { ConstructionDescription } from "./elements-walkthrough.js";
+import { circleStep, pointStep, segmentStep } from "./walkthrough-templates.js";
 
 export const Midpoint: ConstructionDescription = {
   name: "bisector",
   inputs: ["Point", "Point"],
   // TODO: maybe add initial positions for consistency? or a set seed
-  initSteps: [
-    {
-      resultNames: ["A"],
-      action: "mkPoint",
-      args: [],
-      focus: true,
-    },
-    {
-      resultNames: ["B"],
-      action: "mkPoint",
-      args: [],
-      focus: true,
-    },
-  ],
+  initSteps: [pointStep("A", true), pointStep("B", true)],
   steps: [
-    {
-      resultNames: ["CircAB"],
-      action: "mkCircle",
-      args: ["A", "B"],
-      description:
-        "Construct a circle with center A and and B on the circumference",
-    },
-    {
-      resultNames: ["CircBA"],
-      action: "mkCircle",
-      args: ["B", "A"],
-      description:
-        "Construct a circle with center B and and A on the circumference",
-    },
+    circleStep("A", "B"),
+    circleStep("B", "A"),
     {
       resultNames: ["C", "D"],
       action: "mkIntersections",
       args: ["CircAB", "CircBA"],
       description: "Find the intersection points of the two circles",
     },
-    {
-      resultNames: ["CD"],
-      action: "mkSegment",
-      args: ["C", "D"],
-      description: "Construct the line through C and D",
-    },
-    {
-      resultNames: ["AB"],
-      action: "mkSegment",
-      args: ["A", "B"],
-      description: "Construct the line through A and B",
-      focus: true,
-    },
+    segmentStep("C", "D"),
+    segmentStep("A", "B", true),
     {
       resultNames: ["E"],
       action: "mkIntersections",
@@ -63,68 +28,74 @@ export const Midpoint: ConstructionDescription = {
 };
 
 export const EquilateralTriangle: ConstructionDescription = {
-  name: "equilateraltriangle",
+  name: "equilateral triangle",
   inputs: ["Point", "Point"],
-  // TODO: maybe add initial positions for consistency? or a set seed
-  initSteps: [
-    {
-      resultNames: ["A"],
-      action: "mkPoint",
-      args: [],
-      focus: true,
-    },
-    {
-      resultNames: ["B"],
-      action: "mkPoint",
-      args: [],
-      focus: true,
-    },
-  ],
+  initSteps: [pointStep("F", true), pointStep("G", true)],
   steps: [
+    circleStep("F", "G"),
+    circleStep("G", "F"),
     {
-      resultNames: ["CircAB"],
-      action: "mkCircle",
-      args: ["A", "B"],
-      description:
-        "Construct a circle with center A and and B on the circumference",
-    },
-    {
-      resultNames: ["CircBA"],
-      action: "mkCircle",
-      args: ["B", "A"],
-      description:
-        "Construct a circle with center B and and A on the circumference",
-    },
-    {
-      resultNames: ["C", "D"],
+      resultNames: ["H", "I"],
       action: "mkIntersections",
-      args: ["CircAB", "CircBA"],
+      args: ["CircFG", "CircGF"],
       description: "Find the intersection points of the two circles",
     },
-    {
-      resultNames: ["AC"],
-      action: "mkSegment",
-      args: ["A", "C"],
-      description: "Construct a line between A and C",
-      focus: true,
-    },
-    {
-      resultNames: ["BC"],
-      action: "mkSegment",
-      args: ["B", "C"],
-      description: "Construct a line between B and C",
-      focus: true,
-    },
-    {
-      resultNames: ["AB"],
-      action: "mkSegment",
-      args: ["A", "B"],
-      description: "Construct a line between A and B",
-      focus: true,
-    },
+    segmentStep("F", "H", true),
+    segmentStep("G", "H", true),
+    segmentStep("F", "I", true),
   ],
 };
+
+const CopySegment: ConstructionDescription = {
+  name: "copy segment",
+  inputs: ["Point", "Point", "Point", "Segment"],
+  initSteps: [
+    pointStep("A", true),
+    pointStep("B", true),
+    pointStep("C", true),
+    // segmentStep("B", "C", true), // TODO this breaks?
+  ],
+  steps: [
+    segmentStep("B", "C", true),
+    {
+      resultNames: ["ABD", "D", "AD", "AB", "BD"],
+      action: "mkEquilateralTriangle",
+      args: ["A", "B"],
+      description: "Construct an equilateral triangle with side length AB",
+    },
+    {
+      resultNames: ["DE"],
+      action: "mkLineExtension",
+      args: ["A", "D"],
+      description: "Extend the line AD",
+    },
+    {
+      resultNames: ["DF"],
+      action: "mkLineExtension",
+      args: ["D", "B"],
+      description: "Extend the line DB",
+    },
+    circleStep("B", "C"),
+    {
+      resultNames: ["G"],
+      action: "mkIntersections",
+      args: ["CircBC", "DF"],
+      description: "Find the intersection points of the circle and line",
+    },
+    circleStep("D", "G"),
+    {
+      resultNames: ["L"],
+      action: "mkIntersections",
+      args: ["CircDG", "DE"], // TODO EF?
+      description: "Find the intersection points of the circle and line",
+      focus: true,
+    },
+    segmentStep("A", "L", true),
+  ],
+};
+
 export const walkthroughs: ConstructionDescription[] = [
   Midpoint,
   EquilateralTriangle,
+  CopySegment,
 ];

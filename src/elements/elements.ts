@@ -1,7 +1,5 @@
 import {
-  Circle as BloomCircle,
   Equation as BloomEquation,
-  Line as BloomLine,
   Diagram,
   DiagramBuilder,
   Vec2,
@@ -13,46 +11,23 @@ import {
   max,
   min,
   neg,
+  objectives,
   ops,
   sub,
 } from "@penrose/bloom";
 import { Num } from "@penrose/core";
-
-export interface ConstructionElementCommon {
-  label?: BloomEquation;
-}
-
-export interface Point extends ConstructionElementCommon {
-  tag: "Point";
-  pos: Vec2;
-  icon: BloomCircle;
-  id: number;
-}
-
-export interface Segment extends ConstructionElementCommon {
-  tag: "Segment";
-  point1: Point;
-  point2: Point;
-  icon: BloomLine;
-}
-
-export interface Line extends ConstructionElementCommon {
-  tag: "Line";
-  point1: Point;
-  point2: Point;
-  icon: BloomLine;
-}
-
-export interface Circle extends ConstructionElementCommon {
-  tag: "Circle";
-  center: Point;
-  circumferential: Point;
-  icon: BloomCircle;
-}
-
-export type ConstructionElement = Point | Segment | Line | Circle;
+import {
+  Circle,
+  ConstructionElement,
+  Line,
+  MkPointProps,
+  Point,
+  Segment,
+  Triangle,
+} from "./types";
 
 const MIN_CIRCLE_R = 70;
+const MIN_SEGMENT_LENGTH = 30;
 
 const pointsAreCircleIntersections = (
   p1: Vec2,
@@ -116,51 +91,45 @@ export class Construction {
   private nextPointId = 0;
   private ptLabels: string[] = [];
 
-  mkPoint = (
-    x?: number,
-    y?: number,
-    label?: string,
-    focus?: boolean,
-    draggable = true
-  ): Point => {
+  mkPoint = (props: MkPointProps): Point => {
     const id = this.nextPointId++;
-
+    const draggable = props.draggable === undefined || props.draggable;
     let cx: Num;
-    if (x === undefined) {
+    if (props.x === undefined) {
       cx = this.db.input({ name: `${id}-x` });
     } else if (draggable) {
-      cx = this.db.input({ name: `${id}-x`, init: x, optimized: false });
+      cx = this.db.input({ name: `${id}-x`, init: props.x, optimized: false });
     } else {
-      cx = x;
+      cx = props.x;
     }
 
     let cy: Num;
-    if (y === undefined) {
+    if (props.y === undefined) {
       cy = this.db.input({ name: `${id}-y` });
     } else if (draggable) {
-      cy = this.db.input({ name: `${id}-y`, init: y, optimized: false });
+      cy = this.db.input({ name: `${id}-y`, init: props.y, optimized: false });
     } else {
-      cy = y;
+      cy = props.y;
     }
 
     const icon = this.db.circle({
       r: pointRad,
-      fillColor: focus ? pointColor : unfocusColor,
+      fillColor: props.focus ? pointColor : unfocusColor,
       center: [cx, cy],
       drag: draggable,
     });
 
-    if (label) {
-      if (new Set(this.ptLabels).has(label)) {
-        console.error("Label already exists: ", label);
+    if (props.label) {
+      if (new Set(this.ptLabels).has(props.label)) {
+        console.error("Label already exists: ", props.label);
       }
     } else {
-      label = nextLetter(this.ptLabels[this.ptLabels.length - 1] || "A");
+      props.label = nextLetter(this.ptLabels[this.ptLabels.length - 1] || "A");
     }
-    this.ptLabels.push(label);
+    this.ptLabels.push(props.label);
     let label_ = undefined;
-    if (label !== undefined) {
-      label_ = this.mkLabel(label);
+    if (props.label !== undefined) {
+      label_ = this.mkLabel(props.label);
       const toCenter = ops.vnorm(ops.vsub(label_.center, [cx, cy]));
       this.db.ensure(constraints.lessThan(labelDistMin, toCenter));
       this.db.ensure(constraints.lessThan(toCenter, labelDistMax));
@@ -244,6 +213,13 @@ export class Construction {
       icon,
       label: label_,
     };
+
+    this.db.encourage(
+      constraints.greaterThan(
+        ops.vdist(point1.pos, point2.pos),
+        MIN_SEGMENT_LENGTH
+      )
+    );
 
     this.addElement(segment);
     return segment;
@@ -369,17 +345,21 @@ export class Construction {
 
   mkIntersections = (
     element1: ConstructionElement,
-    element2: ConstructionElement
+    element2: ConstructionElement,
+    focus?: boolean
   ): Point[] => {
+    focus = focus !== undefined && focus;
     switch (element1.tag) {
       case "Segment": {
         switch (element2.tag) {
           case "Segment": {
-            return [this.mkSegmentSegmentIntersection(element1, element2)];
+            return [
+              this.mkSegmentSegmentIntersection(element1, element2, focus),
+            ];
           }
 
           case "Line": {
-            return [this.mkLineSegmentIntersection(element2, element1)];
+            return [this.mkLineSegmentIntersection(element2, element1, focus)];
           }
 
           default:
@@ -390,11 +370,11 @@ export class Construction {
       case "Line": {
         switch (element2.tag) {
           case "Line": {
-            return [this.mkLineLineIntersection(element1, element2)];
+            return [this.mkLineLineIntersection(element1, element2, focus)];
           }
 
           case "Segment": {
-            return [this.mkLineSegmentIntersection(element1, element2)];
+            return [this.mkLineSegmentIntersection(element1, element2, focus)];
           }
 
           default:
@@ -405,7 +385,7 @@ export class Construction {
       case "Circle": {
         switch (element2.tag) {
           case "Circle": {
-            return this.mkCircleCircleIntersection(element1, element2);
+            return this.mkCircleCircleIntersection(element1, element2, focus);
           }
 
           default:
@@ -416,6 +396,58 @@ export class Construction {
       default:
         throw new Error("Invalid intersection");
     }
+  };
+
+  mkTriangle = (p1: Point, p2: Point, p3: Point, focus?: boolean): Triangle => {
+    const t: Triangle = {
+      tag: "Triangle",
+      p1p2: this.mkSegment(p1, p2),
+      p2p3: this.mkSegment(p2, p3),
+      p1p3: this.mkSegment(p1, p3),
+      p1,
+      p2,
+      p3,
+      icon: this.db.polygon({
+        points: [p1.pos, p2.pos, p3.pos],
+        fillColor: focus ? lineLikeColor : unfocusColor,
+        strokeWidth: lineLikeWidth,
+      }),
+    };
+    return t;
+  };
+
+  mkEquilateralTriangle = (
+    p1: Point,
+    p2: Point,
+    focus?: boolean,
+    sideLength: number = 50
+  ): [Triangle, Point, Segment, Segment, Segment] => {
+    const p3 = this.mkPoint({ focus });
+    const t = this.mkTriangle(p1, p2, p3);
+    this.ensureEqualLength(t.p1p2, t.p2p3);
+    this.ensureEqualLength(t.p1p2, t.p1p3);
+
+    // encourage triangle to be non-degenerate
+    this.db.encourage(
+      objectives.greaterThan(ops.vdist(t.p1.pos, t.p2.pos), sideLength)
+    );
+    return [t, p3, t.p1p2, t.p2p3, t.p1p3];
+  };
+
+  mkLineExtension = (
+    [p1, p2]: [Point, Point],
+    focus?: boolean
+  ): [Segment, Point] => {
+    const p3 = this.mkPoint({
+      focus,
+    });
+    const s2 = this.mkSegment(p2, p3, undefined, focus);
+    this.db.ensure(constraints.collinearOrdered(p1.pos, p2.pos, p3.pos));
+    const minLen = 100;
+    this.db.encourage(
+      objectives.greaterThan(ops.vdist(p2.pos, p3.pos), minLen)
+    );
+    return [s2, p3];
   };
 
   setSelected = (element: ConstructionElement, active = true): void => {
@@ -444,6 +476,12 @@ export class Construction {
         input = this.db.getInput(
           `selected-circ-${element.center.id}-${element.circumferential.id}`
         );
+        break;
+      }
+
+      case "Triangle": {
+        // TODO how is this selection ID created?
+        input = this.db.getInput(`selected-triangle-${element.p1.id}`);
         break;
       }
     }
@@ -544,8 +582,12 @@ export class Construction {
     }
   };
 
-  private mkSegmentSegmentIntersection = (s1: Segment, s2: Segment): Point => {
-    const p = this.mkPoint();
+  private mkSegmentSegmentIntersection = (
+    s1: Segment,
+    s2: Segment,
+    focus: boolean
+  ): Point => {
+    const p = this.mkPoint({ focus });
     this.db.ensure(
       constraints.collinearOrdered(s1.point1.pos, p.pos, s1.point2.pos)
     );
@@ -555,15 +597,23 @@ export class Construction {
     return p;
   };
 
-  private mkLineLineIntersection = (l1: Line, l2: Line): Point => {
-    const p = this.mkPoint();
+  private mkLineLineIntersection = (
+    l1: Line,
+    l2: Line,
+    focus: boolean
+  ): Point => {
+    const p = this.mkPoint({ focus });
     this.db.ensure(constraints.collinear(l1.point1.pos, p.pos, l1.point2.pos));
     this.db.ensure(constraints.collinear(l2.point1.pos, p.pos, l2.point2.pos));
     return p;
   };
 
-  private mkLineSegmentIntersection = (l: Line, s: Segment): Point => {
-    const p = this.mkPoint();
+  private mkLineSegmentIntersection = (
+    l: Line,
+    s: Segment,
+    focus: boolean
+  ): Point => {
+    const p = this.mkPoint({ focus });
     this.db.ensure(constraints.collinear(l.point1.pos, p.pos, l.point2.pos));
     this.db.ensure(
       constraints.collinearOrdered(s.point1.pos, p.pos, s.point2.pos)
@@ -573,10 +623,11 @@ export class Construction {
 
   private mkCircleCircleIntersection = (
     c1: Circle,
-    c2: Circle
+    c2: Circle,
+    focus: boolean
   ): [Point, Point] => {
-    const p1 = this.mkPoint();
-    const p2 = this.mkPoint();
+    const p1 = this.mkPoint({ focus });
+    const p2 = this.mkPoint({ focus });
 
     for (const constr of pointsAreCircleIntersections(
       p1.pos,
@@ -589,6 +640,16 @@ export class Construction {
 
     return [p1, p2];
   };
+
+  private ensureEqualLength = (s1: Segment, s2: Segment) => {
+    // dot product the two normal vectors of the segments
+    this.db.ensure(
+      constraints.equal(
+        ops.vdist(s1.point2.pos, s1.point1.pos),
+        ops.vdist(s2.point2.pos, s2.point1.pos)
+      )
+    );
+  };
 }
 
 export type ConstructionAction =
@@ -596,4 +657,6 @@ export type ConstructionAction =
   | "mkSegment"
   | "mkLine"
   | "mkCircle"
-  | "mkIntersections";
+  | "mkIntersections"
+  | "mkEquilateralTriangle"
+  | "mkLineExtension";

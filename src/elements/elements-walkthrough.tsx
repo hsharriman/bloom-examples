@@ -1,17 +1,12 @@
 import { Diagram, Renderer } from "@penrose/bloom";
 import { useEffect, useRef, useState } from "react";
 import { ActionButton } from "./components/ActionButton.tsx";
-import {
-  Construction,
-  ConstructionAction,
-  ConstructionElement,
-  Point,
-  canvasWidth,
-} from "./elements.js";
+import { Construction, ConstructionAction, canvasWidth } from "./elements.ts";
+import { ConstructionElement, Point } from "./types.ts";
 import { walkthroughs } from "./walkthroughs.ts";
 
 // TODO: add optional labels to results
-interface ConstructionStep {
+export interface ConstructionStep {
   resultNames: string[]; // names of results (usually singleton)
   action: ConstructionAction;
   args: string[]; // names of input elements
@@ -77,12 +72,11 @@ export default function ElementsWalkthrough(props: {
       // TODO why is this being called here before the nameElementMap is set up?
       const args: any = step.args.map((arg) => nameElementMap.get(arg)!);
       // @ts-expect-error Spreading args is illegal for unknown lengths
-      const results = construction[step.action](
-        undefined,
-        undefined,
-        step.resultNames[0],
-        true
-      );
+      const results = construction[step.action]({
+        label: step.resultNames[0],
+        focus: step.focus,
+        draggable: true,
+      });
 
       // construction actions may return a single element, or an array
       if (results instanceof Array) {
@@ -125,6 +119,7 @@ export default function ElementsWalkthrough(props: {
 
       case "mkSegment":
       case "mkLine":
+      case "mkEquilateralTriangle":
       case "mkIntersections":
         return (
           (argNames[0] === correctStep.args[0] &&
@@ -132,7 +127,7 @@ export default function ElementsWalkthrough(props: {
           (argNames[0] === correctStep.args[1] &&
             argNames[1] === correctStep.args[0])
         );
-
+      case "mkLineExtension":
       case "mkCircle":
         return (
           argNames[0] === correctStep.args[0] &&
@@ -161,12 +156,13 @@ export default function ElementsWalkthrough(props: {
         "mkpoint name",
         description.steps[currStepIdx].resultNames[0]
       );
-      const p = construction.mkPoint(
+      const p = construction.mkPoint({
         x,
         y,
-        description.steps[currStepIdx].resultNames[0],
-        true
-      );
+        label: description.steps[currStepIdx].resultNames[0],
+        focus: description.steps[currStepIdx].focus,
+        draggable: true,
+      });
       nameElementMap.set(description.steps[currStepIdx].resultNames[0], p);
 
       cleanup();
@@ -240,7 +236,12 @@ export default function ElementsWalkthrough(props: {
         alert("bad!");
         return;
       }
-      const s = construction.mkSegment(A as Point, B as Point);
+      const s = construction.mkSegment(
+        A as Point,
+        B as Point,
+        undefined,
+        description.steps[currStepIdx].focus
+      );
       nameElementMap.set(description.steps[currStepIdx].resultNames[0], s);
       setCurrStepIdx((i) => i + 1);
     });
@@ -253,7 +254,12 @@ export default function ElementsWalkthrough(props: {
         alert("bad!");
         return;
       }
-      const l = construction.mkLine(A as Point, B as Point);
+      const l = construction.mkLine(
+        A as Point,
+        B as Point,
+        undefined,
+        description.steps[currStepIdx].focus
+      );
       nameElementMap.set(description.steps[currStepIdx].resultNames[0], l);
       setCurrStepIdx((i) => i + 1);
     });
@@ -266,8 +272,49 @@ export default function ElementsWalkthrough(props: {
         alert("bad!");
         return;
       }
-      const c = construction.mkCircle(A as Point, B as Point);
+      const c = construction.mkCircle(
+        A as Point,
+        B as Point,
+        undefined,
+        description.steps[currStepIdx].focus
+      );
       nameElementMap.set(description.steps[currStepIdx].resultNames[0], c);
+      setCurrStepIdx((i) => i + 1);
+    });
+  };
+
+  const addEquilatOnClick = () => {
+    setCurrAction("mkEquilateralTriangle");
+    setupSelect2Action(["Point"], (A, B) => {
+      if (!checkAction("mkEquilateralTriangle", [A, B])) {
+        alert("bad!");
+        return;
+      }
+      const results = construction.mkEquilateralTriangle(
+        A as Point,
+        B as Point,
+        description.steps[currStepIdx].focus
+      );
+      results.forEach((obj, i) =>
+        nameElementMap.set(description.steps[currStepIdx].resultNames[i], obj)
+      );
+      setCurrStepIdx((i) => i + 1);
+    });
+  };
+
+  const addLineExtensionOnClick = () => {
+    setCurrAction("mkLineExtension");
+    setupSelect2Action(["Point"], (A, B) => {
+      if (!checkAction("mkLineExtension", [A, B])) {
+        alert("bad!");
+        return;
+      }
+      const [seg, pt] = construction.mkLineExtension(
+        [A as Point, B as Point],
+        description.steps[currStepIdx].focus
+      );
+      nameElementMap.set(description.steps[currStepIdx].resultNames[0], seg);
+      nameElementMap.set(description.steps[currStepIdx].resultNames[1], pt);
       setCurrStepIdx((i) => i + 1);
     });
   };
@@ -279,7 +326,11 @@ export default function ElementsWalkthrough(props: {
         alert("bad!");
         return;
       }
-      const [C, D] = construction.mkIntersections(A, B);
+      const [C, D] = construction.mkIntersections(
+        A,
+        B,
+        description.steps[currStepIdx].focus
+      );
       nameElementMap.set(description.steps[currStepIdx].resultNames[0], C);
       nameElementMap.set(description.steps[currStepIdx].resultNames[1], D);
       setCurrStepIdx((i) => i + 1);
@@ -307,6 +358,16 @@ export default function ElementsWalkthrough(props: {
             "Add Intersections",
             currAction !== null,
             addIntersectionsOnClick
+          )}
+          {ActionButton(
+            "Add Equilateral Triangle",
+            currAction !== null,
+            addEquilatOnClick
+          )}
+          {ActionButton(
+            "Extend Line",
+            currAction !== null,
+            addLineExtensionOnClick
           )}
         </div>
 
