@@ -84,7 +84,7 @@ const nextLetter = (letter: string) => {
   return String.fromCharCode(letter.charCodeAt(0) + 1);
 };
 export class Construction {
-  readonly db = new DiagramBuilder(canvas(canvasWidth, canvasHeight), "", 100);
+  readonly db = new DiagramBuilder(canvas(canvasWidth, canvasHeight), "", 1000);
   readonly elements: ConstructionElement[] = [];
   readonly labels: BloomEquation[] = [];
 
@@ -119,20 +119,20 @@ export class Construction {
       drag: draggable,
     });
 
-    if (props.label) {
-      if (new Set(this.ptLabels).has(props.label)) {
-        console.error("Label already exists: ", props.label);
-      }
-    } else {
-      props.label = nextLetter(this.ptLabels[this.ptLabels.length - 1] || "A");
-    }
-    this.ptLabels.push(props.label);
+    // if (props.label) {
+    //   if (new Set(this.ptLabels).has(props.label)) {
+    //     console.error("Label already exists: ", props.label);
+    //   }
+    // } else {
+    //   props.label = nextLetter(this.ptLabels[this.ptLabels.length - 1] || "A");
+    // }
+    // this.ptLabels.push(props.label);
     let label_ = undefined;
     if (props.label !== undefined) {
-      label_ = this.mkLabel(props.label);
-      const toCenter = ops.vnorm(ops.vsub(label_.center, [cx, cy]));
-      this.db.ensure(constraints.lessThan(labelDistMin, toCenter));
-      this.db.ensure(constraints.lessThan(toCenter, labelDistMax));
+      // label_ = this.mkLabel(props.label);
+      // const toCenter = ops.vnorm(ops.vsub(label_.center, [cx, cy]));
+      // this.db.ensure(constraints.lessThan(labelDistMin, toCenter));
+      // this.db.ensure(constraints.lessThan(toCenter, labelDistMax));
     }
 
     const selectedIcon = this.db.circle({
@@ -489,7 +489,7 @@ export class Construction {
     input.val = active ? 1 : 0;
   };
 
-  build = (currDiagram?: Diagram): Promise<Diagram> => {
+  build = (currDiagram?: Diagram, freeze = false): Promise<Diagram> => {
     if (currDiagram) {
       // match up point coordinates, if possible
       for (const el of this.elements) {
@@ -512,6 +512,13 @@ export class Construction {
             /* empty */
           }
         }
+      }
+    }
+
+    for (const el of this.elements) {
+      if (el.tag == "Point") {
+        this.db.setOptimized(`${el.id}-x`, !freeze);
+        this.db.setOptimized(`${el.id}-y`, !freeze);
       }
     }
 

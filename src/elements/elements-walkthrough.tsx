@@ -69,22 +69,64 @@ export default function ElementsWalkthrough(props: {
   // setup
   useEffect(() => {
     for (const step of description.initSteps) {
-      // TODO why is this being called here before the nameElementMap is set up?
-      const args: any = step.args.map((arg) => nameElementMap.get(arg)!);
-      // @ts-expect-error Spreading args is illegal for unknown lengths
-      const results = construction[step.action]({
-        label: step.resultNames[0],
-        focus: step.focus,
-        draggable: true,
-      });
+      let obj: ConstructionElement | ConstructionElement[] = [];
+      switch (step.action) {
+        case "mkPoint":
+          obj = construction.mkPoint({
+            label: step.resultNames[0],
+            focus: step.focus,
+            draggable: true,
+          });
+          break;
+        case "mkSegment":
+          obj = construction.mkSegment(
+            nameElementMap.get(step.args[0]) as Point,
+            nameElementMap.get(step.args[1]) as Point,
+            undefined,
+            // step.resultNames[0],
+            step.focus
+          );
+          break;
+        case "mkLine":
+          obj = construction.mkLine(
+            nameElementMap.get(step.args[0]) as Point,
+            nameElementMap.get(step.args[1]) as Point,
+            step.resultNames[0],
+            step.focus
+          );
+          break;
+        case "mkCircle":
+          obj = construction.mkCircle(
+            nameElementMap.get(step.args[0]) as Point,
+            nameElementMap.get(step.args[1]) as Point,
+            step.resultNames[0],
+            step.focus
+          );
+          break;
+        case "mkEquilateralTriangle":
+          obj = construction.mkEquilateralTriangle(
+            nameElementMap.get(step.args[0]) as Point,
+            nameElementMap.get(step.args[1]) as Point,
+            step.focus
+          );
+          break;
+        case "mkIntersections":
+          obj = construction.mkIntersections(
+            nameElementMap.get(step.args[0]) as ConstructionElement,
+            nameElementMap.get(step.args[1]) as ConstructionElement,
+            step.focus
+          );
+          break;
+        default:
+          console.error("Unexpected action: ", step.action);
+          break;
+      }
 
       // construction actions may return a single element, or an array
-      if (results instanceof Array) {
-        results.map((result, i) =>
-          nameElementMap.set(step.resultNames[i], result)
-        );
+      if (obj instanceof Array) {
+        obj.map((result, i) => nameElementMap.set(step.resultNames[i], result));
       } else {
-        nameElementMap.set(step.resultNames[0], results);
+        nameElementMap.set(step.resultNames[0], obj);
       }
     }
 
@@ -201,7 +243,7 @@ export default function ElementsWalkthrough(props: {
           (selected.length === 0 || selected[0] !== el)
         ) {
           selected.push(el);
-          setDiagram(await construction.build(diagram!));
+          setDiagram(await construction.build(diagram!, true));
         }
 
         if (selected.length === 2) {
@@ -226,7 +268,7 @@ export default function ElementsWalkthrough(props: {
       construction.build(diagram!).then(setDiagram!);
     };
     setCleanupAction(() => cleanup);
-    setDiagram(await construction.build(diagram!));
+    setDiagram(await construction.build(diagram!, true));
   };
 
   const addSegmentOnClick = () => {

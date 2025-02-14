@@ -53,10 +53,10 @@ const CopySegment: ConstructionDescription = {
     pointStep("A", true),
     pointStep("B", true),
     pointStep("C", true),
-    // segmentStep("B", "C", true), // TODO this breaks?
+    segmentStep("B", "C", true), // TODO this breaks?
   ],
   steps: [
-    segmentStep("B", "C", true),
+    // segmentStep("B", "C", true),
     {
       resultNames: ["ABD", "D", "AD", "AB", "BD"],
       action: "mkEquilateralTriangle",
