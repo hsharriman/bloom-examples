@@ -77,7 +77,7 @@ const circleColor = [0, 0, 0, 1];
 const labelDistMax = 15;
 const labelDistMin = 5;
 
-const nextLetter = (letter: string) => {
+(letter: string) => {
   if (letter.toLowerCase() === "z") {
     return "A";
   }
@@ -89,7 +89,7 @@ export class Construction {
   readonly labels: BloomEquation[] = [];
 
   private nextPointId = 0;
-  private ptLabels: string[] = [];
+  // private ptLabels: string[] = [];
 
   mkPoint = (props: MkPointProps): Point => {
     const id = this.nextPointId++;
