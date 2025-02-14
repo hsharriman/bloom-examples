@@ -1,25 +1,25 @@
-// import ParallelLinesConstructor from "./constructions/parallel-lines";
-// import PythagoreanComputedConstructor from "./constructions/pythagorean-computed";
-// import PythagoreanConstructor from "./constructions/pythagorean";
-import ElementsTest from "./elements/elements-walkthrough";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import { ConstructionsPage } from "./routes/Constructions";
+import { Header } from "./routes/Header";
+import { Home } from "./routes/Home";
+import { InteractiveExplanations } from "./routes/InteractiveExplanations";
+import { LabelCorrectionPage } from "./routes/Labels";
 
-function App() {
+export const App = () => {
   return (
     <>
-      <div style={{
-        display: "flex",
-        flexDirection: "row",
-        placeContent: "space-evenly",
-      }}>
-        {/* <EquilateralTriangleConstruction />
-        <PerpendicularBisectorConstructor /> */}
-        {/* <PythagoreanConstructor /> */}
-        {/*<PythagoreanComputedConstructor />*/}
-        {/* <ParallelLinesConstructor /> */}
-        <ElementsTest walkthroughName="bisector" />
-      </div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate replace to="bloom-examples" />} />
+          <Route path="bloom-examples" element={<Header />}>
+            <Route index element={<Home />} />
+            <Route path="vegalite-labels" element={<LabelCorrectionPage />} />
+            <Route path="explanations" element={<InteractiveExplanations />} />
+            <Route path="constructions" element={<ConstructionsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     </>
   );
-}
-
+};
 export default App;
