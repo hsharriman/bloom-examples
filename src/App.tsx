@@ -3,6 +3,7 @@
 // import PythagoreanConstructor from "./constructions/pythagorean";
 import ElementsTest from "./elements/elements-walkthrough";
 import CircleAreaDiagram from "./visual-proofs/circle-area.tsx";
+import ChordProductDiagram from "./visual-proofs/chord-product.tsx";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         {/* <ParallelLinesConstructor /> */}
         {/*<ElementsTest walkthroughName="bisector" />*/}
         <CircleAreaDiagram />
+        <ChordProductDiagram />
       </div>
     </>
   );
