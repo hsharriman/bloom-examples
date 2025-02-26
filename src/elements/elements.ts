@@ -13,6 +13,7 @@ import {
   neg,
   objectives,
   ops,
+  rayIntersectCircle,
   sub,
 } from "@penrose/bloom";
 import { Num } from "@penrose/core";
@@ -89,7 +90,7 @@ export class Construction {
   readonly labels: BloomEquation[] = [];
 
   private nextPointId = 0;
-  // private ptLabels: string[] = [];
+  private ptLabels: string[] = [];
 
   mkPoint = (props: MkPointProps): Point => {
     const id = this.nextPointId++;
@@ -119,20 +120,21 @@ export class Construction {
       drag: draggable,
     });
 
-    // if (props.label) {
-    //   if (new Set(this.ptLabels).has(props.label)) {
-    //     console.error("Label already exists: ", props.label);
-    //   }
-    // } else {
-    //   props.label = nextLetter(this.ptLabels[this.ptLabels.length - 1] || "A");
-    // }
-    // this.ptLabels.push(props.label);
+    if (props.label) {
+      if (new Set(this.ptLabels).has(props.label)) {
+        console.error("Label already exists: ", props.label);
+      }
+    } else {
+      this.ptLabels.push(
+        this.nextLetter(this.ptLabels[this.ptLabels.length - 1] || "A")
+      );
+    }
     let label_ = undefined;
     if (props.label !== undefined) {
-      // label_ = this.mkLabel(props.label);
-      // const toCenter = ops.vnorm(ops.vsub(label_.center, [cx, cy]));
-      // this.db.ensure(constraints.lessThan(labelDistMin, toCenter));
-      // this.db.ensure(constraints.lessThan(toCenter, labelDistMax));
+      label_ = this.mkLabel(props.label);
+      const toCenter = ops.vnorm(ops.vsub(label_.center, [cx, cy]));
+      this.db.ensure(constraints.lessThan(labelDistMin, toCenter));
+      this.db.ensure(constraints.lessThan(toCenter, labelDistMax));
     }
 
     const selectedIcon = this.db.circle({
@@ -387,7 +389,11 @@ export class Construction {
           case "Circle": {
             return this.mkCircleCircleIntersection(element1, element2, focus);
           }
-
+          case "Segment": {
+            return [
+              this.mkCircleSegmentIntersection(element2, element1, focus),
+            ];
+          }
           default:
             throw new Error("Invalid intersection");
         }
@@ -448,6 +454,19 @@ export class Construction {
       objectives.greaterThan(ops.vdist(p2.pos, p3.pos), minLen)
     );
     return [s2, p3];
+  };
+
+  mkEqualSegment = (s: Segment, p: Point, focus: boolean): [Point, Segment] => {
+    const p2 = this.mkPoint({ focus });
+    const s2 = this.mkSegment(p, p2, undefined, focus);
+
+    this.db.ensure(
+      constraints.equal(
+        ops.vdist(s2.point1.pos, s2.point2.pos),
+        ops.vdist(s.point1.pos, s.point2.pos)
+      )
+    );
+    return [p2, s2];
   };
 
   setSelected = (element: ConstructionElement, active = true): void => {
@@ -648,6 +667,26 @@ export class Construction {
     return [p1, p2];
   };
 
+  private mkCircleSegmentIntersection = (
+    s: Segment,
+    c: Circle,
+    focus: boolean
+  ): Point => {
+    const p = this.mkPoint({ focus });
+
+    const constr = rayIntersectCircle(
+      c.center.pos,
+      ops.vdist(c.center.pos, c.circumferential.pos),
+      s.point1.pos,
+      s.point2.pos
+    );
+    this.db.ensure(constraints.equal(ops.vdist(p.pos, constr), 0));
+    this.db.ensure(
+      constraints.collinearOrdered(s.point1.pos, p.pos, s.point2.pos)
+    );
+    return p;
+  };
+
   private ensureEqualLength = (s1: Segment, s2: Segment) => {
     // dot product the two normal vectors of the segments
     this.db.ensure(
@@ -656,6 +695,13 @@ export class Construction {
         ops.vdist(s2.point2.pos, s2.point1.pos)
       )
     );
+  };
+
+  private nextLetter = (letter: string) => {
+    if (letter.toUpperCase() === "Z") {
+      return "A";
+    }
+    return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
   };
 }
 
@@ -666,4 +712,5 @@ export type ConstructionAction =
   | "mkCircle"
   | "mkIntersections"
   | "mkEquilateralTriangle"
-  | "mkLineExtension";
+  | "mkLineExtension"
+  | "mkEqualSegment";

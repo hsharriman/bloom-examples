@@ -175,6 +175,11 @@ export default function ElementsWalkthrough(props: {
           argNames[0] === correctStep.args[0] &&
           argNames[1] === correctStep.args[1]
         );
+      case "mkEqualSegment":
+        return (
+          argNames[0] === correctStep.args[0] &&
+          argNames[1] === correctStep.args[1]
+        );
     }
   };
 
@@ -237,16 +242,16 @@ export default function ElementsWalkthrough(props: {
       if (!new Set(validTags).has(el.tag)) continue;
       const handler = async () => {
         construction.setSelected(el, true);
-
+        console.log(description.steps[currStepIdx].args.length);
         if (
-          selected.length < 2 &&
+          selected.length < description.steps[currStepIdx].args.length &&
           (selected.length === 0 || selected[0] !== el)
         ) {
           selected.push(el);
           setDiagram(await construction.build(diagram!, true));
         }
 
-        if (selected.length === 2) {
+        if (selected.length === description.steps[currStepIdx].args.length) {
           const [A, B] = selected;
           finishAction(A as any, B as any);
           cleanup();
@@ -379,6 +384,24 @@ export default function ElementsWalkthrough(props: {
     });
   };
 
+  const addEqualSegmentOnClick = () => {
+    setCurrAction("mkEqualSegment");
+    setupSelect2Action(["Segment", "Point"], (A, B) => {
+      if (!checkAction("mkEqualSegment", [A, B])) {
+        alert("bad!");
+        return;
+      }
+      const [C, D] = construction.mkEqualSegment(
+        A,
+        B,
+        description.steps[currStepIdx].focus
+      );
+      nameElementMap.set(description.steps[currStepIdx].resultNames[0], C);
+      nameElementMap.set(description.steps[currStepIdx].resultNames[1], D);
+      setCurrStepIdx((i) => i + 1);
+    });
+  };
+
   return (
     <>
       {/* Place the following buttons in a div that looks nice*/}
@@ -410,6 +433,11 @@ export default function ElementsWalkthrough(props: {
             "Extend Line",
             currAction !== null,
             addLineExtensionOnClick
+          )}
+          {ActionButton(
+            "Copy Segment",
+            currAction !== null,
+            addEqualSegmentOnClick
           )}
         </div>
 

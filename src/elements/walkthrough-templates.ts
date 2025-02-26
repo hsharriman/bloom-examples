@@ -8,6 +8,7 @@ export const pointStep = (
   action: "mkPoint",
   args: [],
   focus,
+  description: "Place a point",
 });
 
 export const circleStep = (

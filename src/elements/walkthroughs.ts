@@ -28,7 +28,7 @@ export const Midpoint: ConstructionDescription = {
 };
 
 export const EquilateralTriangle: ConstructionDescription = {
-  name: "equilateral triangle",
+  name: "Prop 1: equilateral triangle",
   inputs: ["Point", "Point"],
   initSteps: [pointStep("F", true), pointStep("G", true)],
   steps: [
@@ -47,16 +47,15 @@ export const EquilateralTriangle: ConstructionDescription = {
 };
 
 const CopySegment: ConstructionDescription = {
-  name: "copy segment",
+  name: "Prop 2: copy segment",
   inputs: ["Point", "Point", "Point", "Segment"],
   initSteps: [
     pointStep("A", true),
     pointStep("B", true),
     pointStep("C", true),
-    segmentStep("B", "C", true), // TODO this breaks?
+    segmentStep("B", "C", true),
   ],
   steps: [
-    // segmentStep("B", "C", true),
     {
       resultNames: ["ABD", "D", "AD", "AB", "BD"],
       action: "mkEquilateralTriangle",
@@ -64,13 +63,13 @@ const CopySegment: ConstructionDescription = {
       description: "Construct an equilateral triangle with side length AB",
     },
     {
-      resultNames: ["DE"],
+      resultNames: ["DE", "E"],
       action: "mkLineExtension",
-      args: ["A", "D"],
+      args: ["D", "A"],
       description: "Extend the line AD",
     },
     {
-      resultNames: ["DF"],
+      resultNames: ["DF", "F"],
       action: "mkLineExtension",
       args: ["D", "B"],
       description: "Extend the line DB",
@@ -94,8 +93,69 @@ const CopySegment: ConstructionDescription = {
   ],
 };
 
+const CutGivenLen: ConstructionDescription = {
+  name: "Prop 3: Cut Given Length",
+  inputs: ["Point", "Point"],
+  // TODO: maybe add initial positions for consistency? or a set seed
+  initSteps: [
+    pointStep("A", true),
+    pointStep("B", true),
+    segmentStep("A", "B"),
+    pointStep("C", false),
+    pointStep("D", false),
+    segmentStep("C", "D", true),
+  ],
+  steps: [
+    {
+      resultNames: ["E", "AE"],
+      action: "mkEqualSegment",
+      args: ["CD", "A"],
+      description: "Copy the segment BC to point A",
+    },
+    circleStep("A", "E"),
+    {
+      resultNames: ["F"],
+      action: "mkIntersections",
+      args: ["CircAE", "AB"],
+      description: "Find the intersection points of the circle and line",
+      focus: true,
+    },
+    segmentStep("A", "F", true),
+  ],
+};
+
+const Isosceles: ConstructionDescription = {
+  name: "Prop 5: Isosceles base angles are equal",
+  inputs: ["Point", "Point", "Point", "Triangle"],
+  initSteps: [
+    pointStep("A", true),
+    pointStep("B", true),
+    pointStep("C", false),
+    pointStep("D", false),
+    segmentStep("C", "D", true),
+  ],
+  steps: [
+    {
+      resultNames: ["E", "AE"],
+      action: "mkEqualSegment",
+      args: ["CD", "A"],
+      description: "Copy the segment BC to point A",
+    },
+    circleStep("A", "E"),
+    {
+      resultNames: ["F"],
+      action: "mkIntersections",
+      args: ["CircAE", "AB"],
+      description: "Find the intersection points of the circle and line",
+      focus: true,
+    },
+    segmentStep("A", "F", true),
+  ],
+};
+
 export const walkthroughs: ConstructionDescription[] = [
   Midpoint,
   EquilateralTriangle,
   CopySegment,
+  CutGivenLen,
 ];
