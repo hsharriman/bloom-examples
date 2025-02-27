@@ -443,7 +443,7 @@ export class Construction {
   mkLineExtension = (
     [p1, p2]: [Point, Point],
     focus?: boolean
-  ): [Segment, Point] => {
+  ): [Point, Segment] => {
     const p3 = this.mkPoint({
       focus,
     });
@@ -453,11 +453,16 @@ export class Construction {
     this.db.encourage(
       objectives.greaterThan(ops.vdist(p2.pos, p3.pos), minLen)
     );
-    return [s2, p3];
+    return [p3, s2];
   };
 
-  mkEqualSegment = (s: Segment, p: Point, focus: boolean): [Point, Segment] => {
-    const p2 = this.mkPoint({ focus });
+  mkEqualSegment = (
+    s: Segment,
+    p: Point,
+    newPtLabel?: string,
+    focus?: boolean
+  ): [Point, Segment] => {
+    const p2 = this.mkPoint({ focus, label: newPtLabel });
     const s2 = this.mkSegment(p, p2, undefined, focus);
 
     this.db.ensure(
@@ -465,6 +470,33 @@ export class Construction {
         ops.vdist(s2.point1.pos, s2.point2.pos),
         ops.vdist(s.point1.pos, s.point2.pos)
       )
+    );
+    return [p2, s2];
+  };
+
+  mkCutGivenLen = (
+    s: Segment,
+    anchor: Point,
+    focus?: boolean,
+    len: number = 50
+  ): [Point, Segment] => {
+    const p2 = this.mkPoint({ focus });
+    if (s.point1 !== anchor || s.point2 !== anchor) {
+      console.error(
+        "Anchor point must be one of the segment's endpoints, instead got: anchor:",
+        anchor,
+        "segment:",
+        s.point1,
+        s.point2
+      );
+    }
+    const s2 = this.mkSegment(p2, anchor, undefined, focus);
+
+    this.db.ensure(
+      constraints.equal(ops.vdist(s2.point1.pos, s2.point2.pos), len)
+    );
+    this.db.ensure(
+      constraints.collinearOrdered(s2.point1.pos, p2.pos, s.point2.pos)
     );
     return [p2, s2];
   };
@@ -713,4 +745,5 @@ export type ConstructionAction =
   | "mkIntersections"
   | "mkEquilateralTriangle"
   | "mkLineExtension"
-  | "mkEqualSegment";
+  | "mkEqualSegment"
+  | "mkCutGivenLen";

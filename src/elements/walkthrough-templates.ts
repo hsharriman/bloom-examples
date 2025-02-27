@@ -51,3 +51,24 @@ export const segmentStep = (
   description: `Construct the segment between ${p1} and ${p2}`,
   focus,
 });
+
+export const lineExtensionStep = (
+  s: string,
+  newPt: string
+): ConstructionStep => ({
+  resultNames: [`${s[1]}${newPt}`, newPt],
+  action: "mkLineExtension",
+  args: [s[0], s[1]],
+  description: `Extend the line ${s}`,
+});
+
+export const equalSegmentStep = (
+  s: string,
+  pt: string,
+  newPt: string
+): ConstructionStep => ({
+  resultNames: [newPt, `${pt}${newPt}`],
+  action: "mkEqualSegment",
+  args: [s, pt],
+  description: `Construct a segment with the same length as ${s} from point ${pt}`,
+});

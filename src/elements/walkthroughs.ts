@@ -1,5 +1,11 @@
 import { ConstructionDescription } from "./elements-walkthrough.js";
-import { circleStep, pointStep, segmentStep } from "./walkthrough-templates.js";
+import {
+  circleStep,
+  equalSegmentStep,
+  lineExtensionStep,
+  pointStep,
+  segmentStep,
+} from "./walkthrough-templates.js";
 
 export const Midpoint: ConstructionDescription = {
   name: "bisector",
@@ -98,8 +104,8 @@ const CutGivenLen: ConstructionDescription = {
   inputs: ["Point", "Point"],
   // TODO: maybe add initial positions for consistency? or a set seed
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
+    pointStep("A", false),
+    pointStep("B", false),
     segmentStep("A", "B"),
     pointStep("C", false),
     pointStep("D", false),
@@ -130,26 +136,27 @@ const Isosceles: ConstructionDescription = {
   initSteps: [
     pointStep("A", true),
     pointStep("B", true),
-    pointStep("C", false),
-    pointStep("D", false),
-    segmentStep("C", "D", true),
+    segmentStep("A", "B", true),
+    equalSegmentStep("AB", "A", "C"),
+    segmentStep("B", "C"),
   ],
   steps: [
+    lineExtensionStep("AB", "D"),
+    lineExtensionStep("AC", "E"),
     {
-      resultNames: ["E", "AE"],
-      action: "mkEqualSegment",
-      args: ["CD", "A"],
-      description: "Copy the segment BC to point A",
+      resultNames: ["F", "AF"],
+      action: "mkCutGivenLen",
+      args: ["AD"],
+      description: "Cut BD to length BF",
     },
-    circleStep("A", "E"),
     {
-      resultNames: ["F"],
-      action: "mkIntersections",
-      args: ["CircAE", "AB"],
-      description: "Find the intersection points of the circle and line",
-      focus: true,
+      resultNames: ["G", "AG"],
+      action: "mkCutGivenLen",
+      args: ["AE"],
+      description: "Cut CE to length CG",
     },
-    segmentStep("A", "F", true),
+    segmentStep("B", "G"),
+    segmentStep("C", "F"),
   ],
 };
 
@@ -158,4 +165,5 @@ export const walkthroughs: ConstructionDescription[] = [
   EquilateralTriangle,
   CopySegment,
   CutGivenLen,
+  Isosceles,
 ];
