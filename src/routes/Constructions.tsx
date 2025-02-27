@@ -1,8 +1,9 @@
 import React from "react";
 
-import ElementsTest from "../elements/elements-walkthrough";
-import { ConstructionDescription } from "../elements/elements-walkthrough.tsx";
-import { walkthroughs } from "../elements/walkthroughs.ts";
+import ElementsTest, {
+  ConstructionDescription,
+} from "../elements/ElementsPage.tsx";
+import { walkthroughs } from "../elements/walkthrough/steps.ts";
 
 export class ConstructionsPage extends React.Component<{}, { idx: number }> {
   private walkthroughNames = walkthroughs.map(

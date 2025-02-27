@@ -1,9 +1,15 @@
 import { Diagram, Renderer } from "@penrose/bloom";
-import { useEffect, useRef, useState } from "react";
+import { SetStateAction, useEffect, useRef, useState } from "react";
 import { ActionButton } from "./components/ActionButton.tsx";
-import { Construction, ConstructionAction, canvasWidth } from "./elements.ts";
-import { ConstructionElement, Point, Segment } from "./types.ts";
-import { walkthroughs } from "./walkthroughs.ts";
+import { Construction, canvasWidth } from "./euclid.ts";
+import {
+  CObj,
+  ConstructionAction,
+  ConstructionElement,
+  Point,
+  Segment,
+} from "./types.ts";
+import { walkthroughs } from "./walkthrough/steps.ts";
 
 // TODO: add optional labels to results
 export interface ConstructionStep {
@@ -19,6 +25,7 @@ export interface ConstructionDescription {
   inputs: ConstructionElement["tag"][];
   initSteps: ConstructionStep[]; // only for walkthrough
   steps: ConstructionStep[];
+  id: number;
 }
 
 let construction = new Construction();
@@ -117,6 +124,28 @@ export default function ElementsWalkthrough(props: {
             step.focus
           );
           break;
+        case "mkEqualSegment":
+          obj = construction.mkEqualSegment(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Segment
+          );
+          break;
+        case "mkLineExtension":
+          obj = construction.mkLineExtension(
+            [
+              nameElementMap.get(step.args[0]) as Point,
+              nameElementMap.get(step.args[1]) as Point,
+            ],
+            step.focus
+          );
+          break;
+        case "mkCutGivenLen":
+          obj = construction.mkCutGivenLen(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Point,
+            step.focus
+          );
+          break;
         default:
           console.error("Unexpected action: ", step.action);
           break;
@@ -142,9 +171,13 @@ export default function ElementsWalkthrough(props: {
   const checkAction = (
     action: ConstructionAction,
     args: ConstructionElement[]
-  ) => {
+  ): [boolean, string] => {
     const correctStep = description.steps[currStepIdx];
-    if (action != correctStep.action) return false;
+    if (action != correctStep.action)
+      return [
+        false,
+        `action doesn't match: ${action}, correct: ${correctStep.action}`,
+      ];
 
     const elementNameMap = new Map<ConstructionElement, string>();
     nameElementMap.forEach((v, k) => elementNameMap.set(v, k));
@@ -157,38 +190,30 @@ export default function ElementsWalkthrough(props: {
 
     switch (action) {
       case "mkPoint":
-        return true;
+        return [true, ""];
 
       case "mkSegment":
       case "mkLine":
       case "mkEquilateralTriangle":
+      case "mkEqualSegment":
       case "mkIntersections":
-        return (
+        return [
           (argNames[0] === correctStep.args[0] &&
             argNames[1] === correctStep.args[1]) ||
-          (argNames[0] === correctStep.args[1] &&
-            argNames[1] === correctStep.args[0])
-        );
+            (argNames[0] === correctStep.args[1] &&
+              argNames[1] === correctStep.args[0]),
+          `order doesn't matter: ${argNames}, correct: ${correctStep.args}`,
+        ];
       case "mkLineExtension":
-        return (
-          argNames[0] === correctStep.args[0] &&
-          argNames[1] === correctStep.args[1]
-        );
       case "mkCircle":
-        return (
-          argNames[0] === correctStep.args[0] &&
-          argNames[1] === correctStep.args[1]
-        );
-      case "mkEqualSegment":
-        return (
-          argNames[0] === correctStep.args[0] &&
-          argNames[1] === correctStep.args[1]
-        );
+      case "mkCopySegment":
       case "mkCutGivenLen":
-        return (
+        console.log("checking order matters ", argNames, correctStep.args);
+        return [
           argNames[0] === correctStep.args[0] &&
-          argNames[1] === correctStep.args[1]
-        );
+            argNames[1] === correctStep.args[1],
+          `order matters: ${argNames}, correct: ${correctStep.args}`,
+        ];
     }
   };
 
@@ -238,12 +263,9 @@ export default function ElementsWalkthrough(props: {
     setCurrAction("mkPoint");
   };
 
-  const setupSelect2Action = async <
-    T extends ConstructionElement,
-    U extends ConstructionElement
-  >(
+  const setupSelect2Action = async (
     validTags: string[],
-    finishAction: (el1: T, el2: U) => void
+    finishAction: (selected: ConstructionElement[]) => void
   ) => {
     const selected: ConstructionElement[] = [];
     const handlers: Map<ConstructionElement, any> = new Map();
@@ -251,7 +273,6 @@ export default function ElementsWalkthrough(props: {
       if (!new Set(validTags).has(el.tag)) continue;
       const handler = async () => {
         construction.setSelected(el, true);
-        console.log(description.steps[currStepIdx].args.length);
         if (
           selected.length < description.steps[currStepIdx].args.length &&
           (selected.length === 0 || selected[0] !== el)
@@ -261,8 +282,7 @@ export default function ElementsWalkthrough(props: {
         }
 
         if (selected.length === description.steps[currStepIdx].args.length) {
-          const [A, B] = selected;
-          finishAction(A as any, B as any);
+          finishAction(selected);
           cleanup();
           setCurrAction(null);
         }
@@ -276,7 +296,6 @@ export default function ElementsWalkthrough(props: {
         construction.db.removeEventListener(el.icon, "pointerdown", handler);
       }
       for (const el of selected) {
-        console.log(selected);
         construction.setSelected(el, false);
       }
       construction.build(diagram!).then(setDiagram!);
@@ -286,150 +305,109 @@ export default function ElementsWalkthrough(props: {
   };
 
   const addSegmentOnClick = () => {
-    setCurrAction("mkSegment");
-    setupSelect2Action(["Point"], (A, B) => {
-      if (!checkAction("mkSegment", [A, B])) {
-        alert("bad!");
-        return;
-      }
-      const s = construction.mkSegment(
+    addAction("mkSegment", [CObj.Point], ([A, B]) =>
+      construction.mkSegment(
         A as Point,
         B as Point,
         undefined,
         description.steps[currStepIdx].focus
-      );
-      nameElementMap.set(description.steps[currStepIdx].resultNames[0], s);
-      setCurrStepIdx((i) => i + 1);
-    });
+      )
+    );
   };
 
   const addLineOnClick = () => {
-    setCurrAction("mkLine");
-    setupSelect2Action(["Point"], (A, B) => {
-      if (!checkAction("mkLine", [A, B])) {
-        alert("bad!");
-        return;
-      }
-      const l = construction.mkLine(
+    addAction("mkLine", [CObj.Point], ([A, B]) =>
+      construction.mkLine(
         A as Point,
         B as Point,
         undefined,
         description.steps[currStepIdx].focus
-      );
-      nameElementMap.set(description.steps[currStepIdx].resultNames[0], l);
-      setCurrStepIdx((i) => i + 1);
-    });
+      )
+    );
   };
 
   const addCircleOnClick = () => {
-    setCurrAction("mkCircle");
-    setupSelect2Action(["Point"], (A, B) => {
-      if (!checkAction("mkCircle", [A, B])) {
-        alert("bad!");
-        return;
-      }
-      const c = construction.mkCircle(
+    addAction("mkCircle", [CObj.Point], ([A, B]) =>
+      construction.mkCircle(
         A as Point,
         B as Point,
         undefined,
         description.steps[currStepIdx].focus
-      );
-      nameElementMap.set(description.steps[currStepIdx].resultNames[0], c);
-      setCurrStepIdx((i) => i + 1);
-    });
+      )
+    );
   };
 
   const addEquilatOnClick = () => {
-    setCurrAction("mkEquilateralTriangle");
-    setupSelect2Action(["Point"], (A, B) => {
-      if (!checkAction("mkEquilateralTriangle", [A, B])) {
-        alert("bad!");
-        return;
-      }
-      const results = construction.mkEquilateralTriangle(
+    addAction("mkEquilateralTriangle", [CObj.Point], ([A, B]) =>
+      construction.mkEquilateralTriangle(
         A as Point,
         B as Point,
         description.steps[currStepIdx].focus
-      );
-      results.forEach((obj, i) =>
-        nameElementMap.set(description.steps[currStepIdx].resultNames[i], obj)
-      );
-      setCurrStepIdx((i) => i + 1);
-    });
+      )
+    );
   };
 
   const addLineExtensionOnClick = () => {
-    setCurrAction("mkLineExtension");
-    setupSelect2Action(["Point"], (A, B) => {
-      if (!checkAction("mkLineExtension", [A, B])) {
-        alert("bad!");
-        return;
-      }
-      const objs = construction.mkLineExtension(
+    addAction("mkLineExtension", [CObj.Point], ([A, B]) =>
+      construction.mkLineExtension(
         [A as Point, B as Point],
         description.steps[currStepIdx].focus
-      );
-      objs.map((obj, i) =>
-        nameElementMap.set(description.steps[currStepIdx].resultNames[i], obj)
-      );
-      setCurrStepIdx((i) => i + 1);
-    });
+      )
+    );
   };
 
   const addIntersectionsOnClick = () => {
-    setCurrAction("mkIntersections");
-    setupSelect2Action(["Segment", "Circle"], (A, B) => {
-      if (!checkAction("mkIntersections", [A, B])) {
-        alert("bad!");
-        return;
-      }
-      const [C, D] = construction.mkIntersections(
-        A,
-        B,
-        description.steps[currStepIdx].focus
-      );
-      nameElementMap.set(description.steps[currStepIdx].resultNames[0], C);
-      nameElementMap.set(description.steps[currStepIdx].resultNames[1], D);
-      setCurrStepIdx((i) => i + 1);
-    });
+    addAction("mkIntersections", [CObj.Segment, CObj.Circle], ([A, B]) =>
+      construction.mkIntersections(A, B, description.steps[currStepIdx].focus)
+    );
   };
 
-  const addEqualSegmentOnClick = () => {
-    setCurrAction("mkEqualSegment");
-    setupSelect2Action(["Segment", "Point"], (A, B) => {
-      if (!checkAction("mkEqualSegment", [A, B])) {
-        alert("bad!");
-        return;
-      }
-      // TODO needs label passed in or generated
-      const objs = construction.mkEqualSegment(
-        A as Segment,
-        B as Point,
-        "",
-        description.steps[currStepIdx].focus
-      );
-      objs.map((obj, i) =>
-        nameElementMap.set(description.steps[currStepIdx].resultNames[i], obj)
-      );
-      setCurrStepIdx((i) => i + 1);
-    });
+  const addCopySegmentOnClick = () => {
+    addAction("mkCopySegment", [CObj.Segment, CObj.Point], ([A, B]) =>
+      construction.mkCopySegment(A as Segment, B as Point)
+    );
   };
 
   const addCutSegmentOnClick = () => {
-    setCurrAction("mkCutGivenLen");
-    setupSelect2Action(["Segment", "Point"], (A, B) => {
-      if (!checkAction("mkCutGivenLen", [A, B])) {
-        alert("bad!");
+    addAction(
+      "mkCutGivenLen",
+      [CObj.Segment, CObj.Point],
+      ([A, B]: ConstructionElement[]) =>
+        construction.mkCutGivenLen(
+          A as Segment,
+          B as Point,
+          description.steps[currStepIdx].focus
+        )
+    );
+  };
+
+  const addAction = (
+    methodName: SetStateAction<ConstructionAction | null>,
+    args: CObj[],
+    fn: (
+      args: ConstructionElement[]
+    ) => ConstructionElement[] | ConstructionElement
+  ) => {
+    setCurrAction(methodName);
+    setupSelect2Action(args, (selected) => {
+      const [valid, msg] = checkAction(
+        methodName as ConstructionAction,
+        selected
+      );
+      if (!valid) {
+        alert(msg);
         return;
       }
-      const objs = construction.mkCutGivenLen(
-        A as Segment,
-        B as Point,
-        description.steps[currStepIdx].focus
-      );
-      objs.map((obj, i) =>
-        nameElementMap.set(description.steps[currStepIdx].resultNames[i], obj)
-      );
+      const objs = fn(selected);
+      if (objs instanceof Array) {
+        objs.map((obj, i) =>
+          nameElementMap.set(description.steps[currStepIdx].resultNames[i], obj)
+        );
+        console.log(nameElementMap);
+      } else {
+        nameElementMap.set(description.steps[currStepIdx].resultNames[0], objs);
+      }
+
       setCurrStepIdx((i) => i + 1);
     });
   };
@@ -469,7 +447,7 @@ export default function ElementsWalkthrough(props: {
           {ActionButton(
             "Copy Segment",
             currAction !== null,
-            addEqualSegmentOnClick
+            addCopySegmentOnClick
           )}
           {ActionButton(
             "Cut Length",

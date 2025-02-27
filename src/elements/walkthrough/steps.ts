@@ -1,15 +1,16 @@
-import { ConstructionDescription } from "./elements-walkthrough.js";
+import { ConstructionDescription } from "../ElementsPage.js";
 import {
   circleStep,
   equalSegmentStep,
   lineExtensionStep,
   pointStep,
   segmentStep,
-} from "./walkthrough-templates.js";
+} from "./templates.js";
 
 export const Midpoint: ConstructionDescription = {
   name: "bisector",
   inputs: ["Point", "Point"],
+  id: 1,
   // TODO: maybe add initial positions for consistency? or a set seed
   initSteps: [pointStep("A", true), pointStep("B", true)],
   steps: [
@@ -36,6 +37,7 @@ export const Midpoint: ConstructionDescription = {
 export const EquilateralTriangle: ConstructionDescription = {
   name: "Prop 1: equilateral triangle",
   inputs: ["Point", "Point"],
+  id: 2,
   initSteps: [pointStep("F", true), pointStep("G", true)],
   steps: [
     circleStep("F", "G"),
@@ -48,12 +50,13 @@ export const EquilateralTriangle: ConstructionDescription = {
     },
     segmentStep("F", "H", true),
     segmentStep("G", "H", true),
-    segmentStep("F", "I", true),
+    segmentStep("F", "G", true),
   ],
 };
 
 const CopySegment: ConstructionDescription = {
   name: "Prop 2: copy segment",
+  id: 3,
   inputs: ["Point", "Point", "Point", "Segment"],
   initSteps: [
     pointStep("A", true),
@@ -68,31 +71,21 @@ const CopySegment: ConstructionDescription = {
       args: ["A", "B"],
       description: "Construct an equilateral triangle with side length AB",
     },
-    {
-      resultNames: ["DE", "E"],
-      action: "mkLineExtension",
-      args: ["D", "A"],
-      description: "Extend the line AD",
-    },
-    {
-      resultNames: ["DF", "F"],
-      action: "mkLineExtension",
-      args: ["D", "B"],
-      description: "Extend the line DB",
-    },
+    lineExtensionStep("DA", "E"),
+    lineExtensionStep("DB", "F"),
     circleStep("B", "C"),
     {
       resultNames: ["G"],
       action: "mkIntersections",
-      args: ["CircBC", "DF"],
-      description: "Find the intersection points of the circle and line",
+      args: ["CircBC", "BF"],
+      description: "Find the intersection points of the circle and line BF",
     },
     circleStep("D", "G"),
     {
       resultNames: ["L"],
       action: "mkIntersections",
-      args: ["CircDG", "DE"], // TODO EF?
-      description: "Find the intersection points of the circle and line",
+      args: ["CircDG", "AE"], // TODO EF?
+      description: "Find the intersection points of the circle and line AE",
       focus: true,
     },
     segmentStep("A", "L", true),
@@ -102,6 +95,7 @@ const CopySegment: ConstructionDescription = {
 const CutGivenLen: ConstructionDescription = {
   name: "Prop 3: Cut Given Length",
   inputs: ["Point", "Point"],
+  id: 4,
   // TODO: maybe add initial positions for consistency? or a set seed
   initSteps: [
     pointStep("A", false),
@@ -113,10 +107,10 @@ const CutGivenLen: ConstructionDescription = {
   ],
   steps: [
     {
-      resultNames: ["E", "AE"],
-      action: "mkEqualSegment",
+      resultNames: ["AE", "E"],
+      action: "mkCopySegment",
       args: ["CD", "A"],
-      description: "Copy the segment BC to point A",
+      description: "Copy the segment CD to point A",
     },
     circleStep("A", "E"),
     {
@@ -132,12 +126,15 @@ const CutGivenLen: ConstructionDescription = {
 
 const Isosceles: ConstructionDescription = {
   name: "Prop 5: Isosceles base angles are equal",
-  inputs: ["Point", "Point", "Point", "Triangle"],
+  inputs: ["Point", "Point", "Point"],
+  id: 5,
   initSteps: [
     pointStep("A", true),
     pointStep("B", true),
+    pointStep("C", false),
     segmentStep("A", "B", true),
-    equalSegmentStep("AB", "A", "C"),
+    segmentStep("A", "C", true),
+    equalSegmentStep("AB", "AC"),
     segmentStep("B", "C"),
   ],
   steps: [
@@ -146,13 +143,13 @@ const Isosceles: ConstructionDescription = {
     {
       resultNames: ["F", "AF"],
       action: "mkCutGivenLen",
-      args: ["AD"],
+      args: ["BD", "B"],
       description: "Cut BD to length BF",
     },
     {
       resultNames: ["G", "AG"],
       action: "mkCutGivenLen",
-      args: ["AE"],
+      args: ["CE", "C"],
       description: "Cut CE to length CG",
     },
     segmentStep("B", "G"),

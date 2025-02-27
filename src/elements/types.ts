@@ -58,3 +58,23 @@ export interface MkPointProps {
   focus?: boolean;
   draggable?: boolean; // true by default
 }
+
+export type ConstructionAction =
+  | "mkPoint"
+  | "mkSegment"
+  | "mkLine"
+  | "mkCircle"
+  | "mkIntersections"
+  | "mkEquilateralTriangle"
+  | "mkLineExtension"
+  | "mkEqualSegment"
+  | "mkCopySegment"
+  | "mkCutGivenLen";
+
+export enum CObj {
+  Point = "Point",
+  Segment = "Segment",
+  Line = "Line",
+  Circle = "Circle",
+  Triangle = "Triangle",
+}

@@ -1,4 +1,4 @@
-import { ConstructionStep } from "./elements-walkthrough";
+import { ConstructionStep } from "../ElementsPage";
 
 export const pointStep = (
   name: string,
@@ -62,13 +62,9 @@ export const lineExtensionStep = (
   description: `Extend the line ${s}`,
 });
 
-export const equalSegmentStep = (
-  s: string,
-  pt: string,
-  newPt: string
-): ConstructionStep => ({
-  resultNames: [newPt, `${pt}${newPt}`],
+export const equalSegmentStep = (s: string, s2: string): ConstructionStep => ({
+  resultNames: [s2],
   action: "mkEqualSegment",
-  args: [s, pt],
-  description: `Construct a segment with the same length as ${s} from point ${pt}`,
+  args: [s, s2],
+  description: `Make ${s2} a segment with the same length as ${s}`,
 });

@@ -428,6 +428,7 @@ export class Construction {
     focus?: boolean,
     sideLength: number = 50
   ): [Triangle, Point, Segment, Segment, Segment] => {
+    // make a triangle based on the side length of p1 -> p2
     const p3 = this.mkPoint({ focus });
     const t = this.mkTriangle(p1, p2, p3);
     this.ensureEqualLength(t.p1p2, t.p2p3);
@@ -443,7 +444,8 @@ export class Construction {
   mkLineExtension = (
     [p1, p2]: [Point, Point],
     focus?: boolean
-  ): [Point, Segment] => {
+  ): [Segment, Point] => {
+    // extend a line in the direction of p1 -> p2
     const p3 = this.mkPoint({
       focus,
     });
@@ -453,25 +455,21 @@ export class Construction {
     this.db.encourage(
       objectives.greaterThan(ops.vdist(p2.pos, p3.pos), minLen)
     );
-    return [p3, s2];
+    return [s2, p3];
   };
 
-  mkEqualSegment = (
-    s: Segment,
-    p: Point,
-    newPtLabel?: string,
-    focus?: boolean
-  ): [Point, Segment] => {
-    const p2 = this.mkPoint({ focus, label: newPtLabel });
-    const s2 = this.mkSegment(p, p2, undefined, focus);
+  mkEqualSegment = (s: Segment, s2: Segment): [Segment] => {
+    // enforce that 2 segments are the same length
+    this.ensureEqualLength(s, s2);
+    return [s2];
+  };
 
-    this.db.ensure(
-      constraints.equal(
-        ops.vdist(s2.point1.pos, s2.point2.pos),
-        ops.vdist(s.point1.pos, s.point2.pos)
-      )
-    );
-    return [p2, s2];
+  mkCopySegment = (s: Segment, p: Point): [Segment, Point] => {
+    // Copy a segment to a point
+    const p2 = this.mkPoint({});
+    const s2 = this.mkSegment(p, p2);
+    this.ensureEqualLength(s, s2);
+    return [s2, p2];
   };
 
   mkCutGivenLen = (
@@ -493,10 +491,13 @@ export class Construction {
     const s2 = this.mkSegment(p2, anchor, undefined, focus);
 
     this.db.ensure(
-      constraints.equal(ops.vdist(s2.point1.pos, s2.point2.pos), len)
+      constraints.equal(ops.vnorm(ops.vsub(s2.point1.pos, p2.pos)), len)
     );
+    // this.db.ensure(
+    //   constraints.collinearOrdered(s2.point1.pos, p2.pos, s.point2.pos)
+    // );
     this.db.ensure(
-      constraints.collinearOrdered(s2.point1.pos, p2.pos, s.point2.pos)
+      constraints.collinearOrdered(s.point1.pos, p2.pos, s.point2.pos)
     );
     return [p2, s2];
   };
@@ -736,14 +737,3 @@ export class Construction {
     return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
   };
 }
-
-export type ConstructionAction =
-  | "mkPoint"
-  | "mkSegment"
-  | "mkLine"
-  | "mkCircle"
-  | "mkIntersections"
-  | "mkEquilateralTriangle"
-  | "mkLineExtension"
-  | "mkEqualSegment"
-  | "mkCutGivenLen";
