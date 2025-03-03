@@ -1,7 +1,9 @@
 import { ConstructionDescription } from "../ElementsPage.js";
 import {
   circleStep,
+  cutLengthStep,
   equalSegmentStep,
+  equilateralTriangleStep,
   lineExtensionStep,
   pointStep,
   segmentStep,
@@ -133,8 +135,7 @@ const Isosceles: ConstructionDescription = {
     pointStep("B", true),
     pointStep("C", false),
     segmentStep("A", "B", true),
-    segmentStep("A", "C", true),
-    equalSegmentStep("AB", "AC"),
+    equalSegmentStep("AB", "A", "C"),
     segmentStep("B", "C"),
   ],
   steps: [
@@ -157,10 +158,66 @@ const Isosceles: ConstructionDescription = {
   ],
 };
 
+const SSS: ConstructionDescription = {
+  name: "Prop 7: SSS Uniqueness",
+  inputs: ["Point", "Point", "Point", "Point"],
+  id: 6,
+  initSteps: [
+    pointStep("A", true),
+    pointStep("B", true),
+    pointStep("C", false),
+    pointStep("D", false),
+    segmentStep("A", "B", true),
+    segmentStep("A", "D", true),
+    segmentStep("B", "D", true),
+    equalSegmentStep("AD", "A", "C"),
+    equalSegmentStep("BD", "B", "C"),
+  ],
+  steps: [segmentStep("C", "D")],
+};
+
+const BisectAngle: ConstructionDescription = {
+  name: "Prop 9: Bisect angle",
+  inputs: ["Point", "Point", "Point"],
+  id: 6,
+  initSteps: [
+    pointStep("A", true),
+    pointStep("B", true),
+    pointStep("C", false),
+    segmentStep("A", "B"),
+    equalSegmentStep("AB", "A", "C"),
+  ],
+  steps: [
+    cutLengthStep("A", "B", "D"),
+    cutLengthStep("A", "C", "E"),
+    equilateralTriangleStep("D", "E", "F"),
+    segmentStep("A", "F"),
+  ],
+};
+
+const BisectSegment: ConstructionDescription = {
+  name: "Prop 10: Bisect segment",
+  inputs: ["Point", "Point"],
+  id: 7,
+  initSteps: [
+    pointStep("A", true),
+    pointStep("B", true),
+    segmentStep("A", "B"),
+  ],
+  steps: [
+    equilateralTriangleStep("A", "B", "C"),
+    pointStep("D"),
+    segmentStep("A", "F"),
+  ],
+};
+
 export const walkthroughs: ConstructionDescription[] = [
   Midpoint,
   EquilateralTriangle,
   CopySegment,
   CutGivenLen,
   Isosceles,
+  SSS,
+  BisectAngle,
+  BisectSegment,
 ];

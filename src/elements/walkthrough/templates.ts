@@ -62,9 +62,41 @@ export const lineExtensionStep = (
   description: `Extend the line ${s}`,
 });
 
-export const equalSegmentStep = (s: string, s2: string): ConstructionStep => ({
-  resultNames: [s2],
+export const equalSegmentStep = (
+  s: string,
+  p1: string,
+  p2: string
+): ConstructionStep => ({
+  resultNames: [`${p1}${p2}`],
   action: "mkEqualSegment",
-  args: [s, s2],
-  description: `Make ${s2} a segment with the same length as ${s}`,
+  args: [s, p1, p2],
+  description: `Make a segment ${p1}${p2} with the same length as ${s}`,
+});
+
+export const cutLengthStep = (
+  p1: string,
+  p2: string,
+  newPt: string
+): ConstructionStep => ({
+  resultNames: [newPt, `${p1}${newPt}`],
+  action: "mkCutGivenLen",
+  args: [p1, p2],
+  description: `Cut ${p1}${p2} to length ${p1}${newPt} (selecting ${p1} -> ${p2})`,
+});
+
+export const equilateralTriangleStep = (
+  p1: string,
+  p2: string,
+  newPt: string
+): ConstructionStep => ({
+  resultNames: [
+    `${p1}${p2}${newPt}`,
+    newPt,
+    `${p1}${p2}`,
+    `${p2}${newPt}`,
+    `${p1}${newPt}`,
+  ],
+  action: "mkEquilateralTriangle",
+  args: [p1, p2],
+  description: `Construct an equilateral triangle with side length ${p1}${p2}`,
 });

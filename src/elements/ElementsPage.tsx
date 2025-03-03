@@ -127,7 +127,8 @@ export default function ElementsWalkthrough(props: {
         case "mkEqualSegment":
           obj = construction.mkEqualSegment(
             nameElementMap.get(step.args[0]) as Segment,
-            nameElementMap.get(step.args[1]) as Segment
+            nameElementMap.get(step.args[1]) as Point,
+            nameElementMap.get(step.args[2]) as Point
           );
           break;
         case "mkLineExtension":
@@ -141,7 +142,7 @@ export default function ElementsWalkthrough(props: {
           break;
         case "mkCutGivenLen":
           obj = construction.mkCutGivenLen(
-            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[0]) as Point,
             nameElementMap.get(step.args[1]) as Point,
             step.focus
           );
@@ -195,7 +196,6 @@ export default function ElementsWalkthrough(props: {
       case "mkSegment":
       case "mkLine":
       case "mkEquilateralTriangle":
-      case "mkEqualSegment":
       case "mkIntersections":
         return [
           (argNames[0] === correctStep.args[0] &&
@@ -203,6 +203,11 @@ export default function ElementsWalkthrough(props: {
             (argNames[0] === correctStep.args[1] &&
               argNames[1] === correctStep.args[0]),
           `order doesn't matter: ${argNames}, correct: ${correctStep.args}`,
+        ];
+      case "mkBisectSegment":
+        return [
+          argNames[0] === correctStep.args[0],
+          `was passed: ${argNames}, correct: ${correctStep.args}`,
         ];
       case "mkLineExtension":
       case "mkCircle":
@@ -213,6 +218,22 @@ export default function ElementsWalkthrough(props: {
           argNames[0] === correctStep.args[0] &&
             argNames[1] === correctStep.args[1],
           `order matters: ${argNames}, correct: ${correctStep.args}`,
+        ];
+      case "mkBisectAngle":
+        return [
+          argNames[0] === correctStep.args[0] &&
+            argNames[1] === correctStep.args[1] &&
+            argNames[2] === correctStep.args[2],
+          `order matters: ${argNames}, correct: ${correctStep.args}`,
+        ];
+      case "mkEqualSegment":
+        return [
+          argNames[0] === correctStep.args[0] &&
+            ((argNames[1] === correctStep.args[1] &&
+              argNames[2] === correctStep.args[2]) ||
+              (argNames[2] === correctStep.args[1] &&
+                argNames[1] === correctStep.args[2])),
+          `first obj must be segment, second 2 are points: ${argNames}, correct: ${correctStep.args}`,
         ];
     }
   };
@@ -374,7 +395,7 @@ export default function ElementsWalkthrough(props: {
       [CObj.Segment, CObj.Point],
       ([A, B]: ConstructionElement[]) =>
         construction.mkCutGivenLen(
-          A as Segment,
+          A as Point,
           B as Point,
           description.steps[currStepIdx].focus
         )

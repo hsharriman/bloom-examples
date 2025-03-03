@@ -3,6 +3,7 @@ import React from "react";
 import ElementsTest, {
   ConstructionDescription,
 } from "../elements/ElementsPage.tsx";
+import { Dropdown } from "../elements/components/Dropdown.tsx";
 import { walkthroughs } from "../elements/walkthrough/steps.ts";
 
 export class ConstructionsPage extends React.Component<{}, { idx: number }> {
@@ -15,46 +16,18 @@ export class ConstructionsPage extends React.Component<{}, { idx: number }> {
       idx: 0,
     };
   }
-  onClickNext = () => {
-    if (this.state.idx === this.walkthroughNames.length - 1) {
-      return;
-    }
-    this.setState({ idx: this.state.idx + 1 });
-  };
-
-  onClickPrev = () => {
-    if (this.state.idx === 0) {
-      return;
-    }
-    this.setState({ idx: this.state.idx - 1 });
-  };
 
   render() {
-    const navBtnCSS =
-      "py-1 px-2 rounded-md border-black border-2 cursor-pointer disabled:bg-slate-300 disabled:cursor-not-allowed disabled:border-none";
     return (
       <div>
-        <div className="flex justify-center">
-          <div className="flex flex-row m-4 gap-2 items-center">
-            <button
-              className={navBtnCSS}
-              disabled={this.state.idx === 0}
-              onClick={this.onClickPrev}
-            >
-              Previous
-            </button>
-
-            <div className="italic">{`Current walkthrough: "${
-              this.walkthroughNames[this.state.idx]
-            }"`}</div>
-
-            <button
-              className={navBtnCSS}
-              onClick={this.onClickNext}
-              disabled={this.state.idx >= this.walkthroughNames.length - 1}
-            >
-              Next
-            </button>
+        <div className="flex justify-center h-12">
+          <div className="flex flex-row m-2 mb-0 gap-2 items-center">
+            <div className="italic">{`Current walkthrough: `}</div>
+            <Dropdown
+              idx={this.state.idx}
+              items={this.walkthroughNames}
+              onClick={(idx: number) => this.setState({ idx })}
+            />
           </div>
         </div>
 

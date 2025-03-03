@@ -458,10 +458,11 @@ export class Construction {
     return [s2, p3];
   };
 
-  mkEqualSegment = (s: Segment, s2: Segment): [Segment] => {
+  mkEqualSegment = (s: Segment, p1: Point, p2: Point): Segment => {
     // enforce that 2 segments are the same length
-    this.ensureEqualLength(s, s2);
-    return [s2];
+    const seg = this.mkSegment(p1, p2);
+    this.ensureEqualLength(s, seg);
+    return seg;
   };
 
   mkCopySegment = (s: Segment, p: Point): [Segment, Point] => {
@@ -472,34 +473,49 @@ export class Construction {
     return [s2, p2];
   };
 
+  mkBisectAngle = (
+    // TODO check that corner isn't overlapping with s1 and s2 points
+    p1: Point,
+    corner: Point,
+    p2: Point
+  ): [Segment, Point] => {
+    // Cut an angle in half
+    const p3 = this.mkPoint({});
+    const bisector = this.mkSegment(corner, p3);
+    const a = ops.vsub(p1.pos, corner.pos);
+    const b = ops.vsub(p3.pos, corner.pos);
+    const c = ops.vsub(p2.pos, corner.pos);
+    this.db.ensure(constraints.equal(ops.vdot(a, b), ops.vdot(b, c)));
+    return [bisector, p3];
+  };
+
+  mkBisectSegment = (s: Segment): [Segment, Segment, Point] => {
+    // cut a segment in half
+    const midpt = this.mkPoint({});
+    const s2 = this.mkSegment(s.point1, midpt);
+    const s3 = this.mkSegment(midpt, s.point2);
+    this.db.ensure(
+      constraints.collinearOrdered(s.point1.pos, midpt.pos, s.point2.pos)
+    );
+    this.ensureEqualLength(s2, s3);
+    return [s2, s3, midpt];
+  };
+
   mkCutGivenLen = (
-    s: Segment,
-    anchor: Point,
+    p1: Point,
+    p2: Point,
     focus?: boolean,
     len: number = 50
   ): [Point, Segment] => {
-    const p2 = this.mkPoint({ focus });
-    if (s.point1 !== anchor || s.point2 !== anchor) {
-      console.error(
-        "Anchor point must be one of the segment's endpoints, instead got: anchor:",
-        anchor,
-        "segment:",
-        s.point1,
-        s.point2
-      );
-    }
-    const s2 = this.mkSegment(p2, anchor, undefined, focus);
+    const p3 = this.mkPoint({ focus });
+    const s2 = this.mkSegment(p1, p3, undefined, focus);
 
-    this.db.ensure(
-      constraints.equal(ops.vnorm(ops.vsub(s2.point1.pos, p2.pos)), len)
-    );
+    this.db.ensure(constraints.equal(ops.vnorm(ops.vsub(p1.pos, p2.pos)), len));
     // this.db.ensure(
     //   constraints.collinearOrdered(s2.point1.pos, p2.pos, s.point2.pos)
     // );
-    this.db.ensure(
-      constraints.collinearOrdered(s.point1.pos, p2.pos, s.point2.pos)
-    );
-    return [p2, s2];
+    this.db.ensure(constraints.collinearOrdered(p1.pos, p3.pos, p2.pos));
+    return [p3, s2];
   };
 
   setSelected = (element: ConstructionElement, active = true): void => {

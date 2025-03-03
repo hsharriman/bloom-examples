@@ -69,7 +69,9 @@ export type ConstructionAction =
   | "mkLineExtension"
   | "mkEqualSegment"
   | "mkCopySegment"
-  | "mkCutGivenLen";
+  | "mkCutGivenLen"
+  | "mkBisectAngle"
+  | "mkBisectSegment";
 
 export enum CObj {
   Point = "Point",
