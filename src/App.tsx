@@ -12,9 +12,9 @@ export const App = () => {
         <Routes>
           <Route path="/" element={<Header />}>
             <Route index element={<Home />} />
-            <Route path="vegalite-labels" element={<LabelCorrectionPage />} />
-            <Route path="explanations" element={<InteractiveExplanations />} />
-            <Route path="constructions" element={<ConstructionsPage />} />
+            <Route path="/vegalite-labels" element={<LabelCorrectionPage />} />
+            <Route path="/explanations" element={<InteractiveExplanations />} />
+            <Route path="/constructions" element={<ConstructionsPage />} />
           </Route>
         </Routes>
       </HashRouter>

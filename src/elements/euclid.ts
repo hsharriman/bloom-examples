@@ -511,9 +511,6 @@ export class Construction {
     const s2 = this.mkSegment(p1, p3, undefined, focus);
 
     this.db.ensure(constraints.equal(ops.vnorm(ops.vsub(p1.pos, p2.pos)), len));
-    // this.db.ensure(
-    //   constraints.collinearOrdered(s2.point1.pos, p2.pos, s.point2.pos)
-    // );
     this.db.ensure(constraints.collinearOrdered(p1.pos, p3.pos, p2.pos));
     return [p3, s2];
   };

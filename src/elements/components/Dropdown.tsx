@@ -12,17 +12,23 @@ export interface DropdownProps {
 export const Dropdown = (props: DropdownProps) => {
   let [showList, setShowList] = useState(false);
   setShowList.bind(this);
-  const listItems = props.items.map((item, i) => (
-    <a
-      href="#"
-      className="block px-4 py-2 text-sm text-gray-700"
-      tabIndex={-1}
-      id={`menu-item-${i}`}
-      onClick={() => props.onClick(i)}
-    >
-      {item}
-    </a>
-  ));
+
+  const listItems = props.items.map((item, i) => {
+    const onClick = () => {
+      setShowList(false);
+      props.onClick(i);
+    };
+    return (
+      <div
+        className="block px-4 py-2 text-sm text-gray-700"
+        tabIndex={-1}
+        id={`menu-item-${i}`}
+        onClick={onClick}
+      >
+        {item}
+      </div>
+    );
+  });
 
   return (
     <div className="relative inline-block text-left">
