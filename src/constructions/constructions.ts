@@ -1,25 +1,17 @@
 import {
-  DiagramBuilder,
-  canvas,
   Circle as BloomCircle,
-  Line as BloomLine,
   Equation as BloomEquation,
+  Line as BloomLine,
   Polygon as BloomPolygon,
   Color,
-  ops,
-  constraints,
-  rayIntersectRect,
+  DiagramBuilder,
   Vec2,
-  pow,
-  add,
-  sqrt,
-  sub,
-  div,
-  mul,
-  ifCond,
-  eq,
+  canvas,
+  constraints,
+  ops,
+  rayIntersectRect,
 } from "@penrose/bloom";
-import { gt, Num } from "@penrose/core";
+import { Num } from "@penrose/core";
 
 export interface Point {
   tag: "Point";
@@ -76,7 +68,12 @@ export class ConstructionDomain {
     this.db = new DiagramBuilder(canvas(width, height), "abcd", 1);
   }
 
-  mkPointFixed = (label: string, x: Num, y: Num, labeled:boolean = false): Point => {
+  mkPointFixed = (
+    label: string,
+    x: Num,
+    y: Num,
+    labeled: boolean = false
+  ): Point => {
     const x2 = this.db.input();
     const y2 = this.db.input();
     const p: Point = {
@@ -90,11 +87,11 @@ export class ConstructionDomain {
         drag: false,
       }),
     };
-    if(labeled) {
+    if (labeled) {
       p.text = this.db.equation({
         center: [x2, y2],
         string: label,
-        fontSize: "10px"
+        fontSize: "10px",
       });
       this.db.ensure(constraints.equal(ops.vdist([x, y], [x2, y2]), 8));
     }
@@ -118,7 +115,7 @@ export class ConstructionDomain {
       icon: this.db.circle({
         center: [x1, y1],
         r: 8,
-        fillColor: [0,0,0,.5],
+        fillColor: [0, 0, 0, 0.5],
         drag: draggable,
       }),
     };
@@ -126,14 +123,14 @@ export class ConstructionDomain {
       p.text = this.db.equation({
         center: [x2, y2],
         string: label,
-        fontSize: "8px"
+        fontSize: "8px",
       });
       this.db.ensure(constraints.equal(ops.vdist([x1, y1], [x2, y2]), 8));
     }
     return p;
   };
 
-  mkTriangle = (p1: Point, p2: Point, p3: Point, c : Color): Triangle => {
+  mkTriangle = (p1: Point, p2: Point, p3: Point, c: Color): Triangle => {
     return {
       tag: "Triangle",
       icon: this.db.polygon({
@@ -155,7 +152,7 @@ export class ConstructionDomain {
 
     const vec = ops.vsub([p2.x, p2.y], [p1.x, p1.y]);
     const perp_vec = ops.rot90(ops.vnormalize(vec));
-    const new_point : Num[] = ops.vadd(midpoint, ops.vmul(d, perp_vec));
+    const new_point: Num[] = ops.vadd(midpoint, ops.vmul(d, perp_vec));
     return new_point;
   }
 
@@ -183,7 +180,7 @@ export class ConstructionDomain {
       s.text = this.db.equation({
         center: label_loc,
         string: label,
-        fontSize: "10px"
+        fontSize: "10px",
       });
     }
     // const midpoint_x = div(add(point1.x, point2.x),2);
@@ -314,10 +311,10 @@ export class ConstructionDomain {
     );
   };
 
-  ensureDisjoint = (t: Triangle, segments : Segment[]) => {
+  ensureDisjoint = (t: Triangle, segments: Segment[]) => {
     // dot product the two normal vectors of the segments
-    for(const s of segments) {
-      if(s.text) {
+    for (const s of segments) {
+      if (s.text) {
         this.db.ensure(constraints.disjoint(t.icon, s.text));
       }
     }
@@ -325,16 +322,16 @@ export class ConstructionDomain {
 
   ensureX(p: Point, x_fixed: Num) {
     this.db.ensure(constraints.equal(p.x, x_fixed));
-    p.icon.dragConstraint = ([x, y]: [number, number]): [number, number] => {
+    p.icon.dragConstraint = ([_, y]: [number, number]): [number, number] => {
       return [x_fixed as number, y];
-    }
+    };
   }
 
   ensureY(p: Point, y_fixed: Num) {
     this.db.ensure(constraints.equal(p.y, y_fixed));
-    p.icon.dragConstraint = ([x, y]: [number, number]): [number, number] => {
+    p.icon.dragConstraint = ([x, _]: [number, number]): [number, number] => {
       return [x, y_fixed as number];
-    }
+    };
   }
 
   build = async () => {

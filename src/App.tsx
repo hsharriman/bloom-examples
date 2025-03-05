@@ -1,29 +1,24 @@
-// import ParallelLinesConstructor from "./constructions/parallel-lines";
-// import PythagoreanComputedConstructor from "./constructions/pythagorean-computed";
-// import PythagoreanConstructor from "./constructions/pythagorean";
-import ElementsTest from "./elements/elements-walkthrough";
-import CircleAreaDiagram from "./visual-proofs/circle-area.tsx";
-import ChordProductDiagram from "./visual-proofs/chord-product.tsx";
+import { HashRouter, Route, Routes } from "react-router";
+import { ConstructionsPage } from "./routes/Constructions";
+import { Header } from "./routes/Header";
+import { Home } from "./routes/Home";
+import { InteractiveExplanations } from "./routes/InteractiveExplanations";
+import { LabelCorrectionPage } from "./routes/Labels";
 
-function App() {
+export const App = () => {
   return (
     <>
-      <div style={{
-        display: "flex",
-        flexDirection: "row",
-        placeContent: "space-evenly",
-      }}>
-        {/* <EquilateralTriangleConstruction />
-        <PerpendicularBisectorConstructor /> */}
-        {/* <PythagoreanConstructor /> */}
-        {/*<PythagoreanComputedConstructor />*/}
-        {/* <ParallelLinesConstructor /> */}
-        {/*<ElementsTest walkthroughName="bisector" />*/}
-        <CircleAreaDiagram />
-        <ChordProductDiagram />
-      </div>
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<Header />}>
+            <Route index element={<Home />} />
+            <Route path="/vegalite-labels" element={<LabelCorrectionPage />} />
+            <Route path="/explanations" element={<InteractiveExplanations />} />
+            <Route path="/constructions" element={<ConstructionsPage />} />
+          </Route>
+        </Routes>
+      </HashRouter>
     </>
   );
-}
-
+};
 export default App;

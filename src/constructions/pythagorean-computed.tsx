@@ -1,12 +1,12 @@
+import { Renderer, add, ops, sub, useDiagram } from "@penrose/bloom";
 import { ConstructionDomain, Segment, Triangle } from "./constructions.js";
-import { Renderer, useDiagram, ops, add, sub } from "@penrose/bloom";
 
 const buildDiagram = async () => {
-  const width=600;
-  const height=600;
+  const width = 600;
+  const height = 600;
   const margin = 10;
-  const leftEdge = -width/2 + margin;
-  const topEdge = height/2 - margin;
+  const leftEdge = -width / 2 + margin;
+  const topEdge = height / 2 - margin;
   const square1_x = leftEdge;
   const square1_y = topEdge - 200;
   const square2_x = 0;
@@ -14,16 +14,15 @@ const buildDiagram = async () => {
   const cd = new ConstructionDomain(width, height);
 
   const Y = cd.mkPointFixed("Y", leftEdge, topEdge);
-  const X = cd.mkPoint("X", false, true, [leftEdge, topEdge-50]);
-  const Z = cd.mkPoint("Z", false, true, [leftEdge+120, topEdge]);
-  const XY = cd.mkSegment(X, Y, "a", true);
-  const a = ops.vdist([X.x, X.y],[Y.x, Y.y])
-  const YZ = cd.mkSegment(Y, Z, "b", true);
-  const b = ops.vdist([Z.x, Z.y],[Y.x, Y.y])
+  const X = cd.mkPoint("X", false, true, [leftEdge, topEdge - 50]);
+  const Z = cd.mkPoint("Z", false, true, [leftEdge + 120, topEdge]);
+  cd.mkSegment(X, Y, "a", true);
+  const a = ops.vdist([X.x, X.y], [Y.x, Y.y]);
+  cd.mkSegment(Y, Z, "b", true);
+  const b = ops.vdist([Z.x, Z.y], [Y.x, Y.y]);
   cd.mkSegment(Z, X, "c", true);
   cd.ensureX(X, Y.x);
   cd.ensureY(Z, Y.y);
-
 
   const A = cd.mkPointFixed("A", square1_x, square1_y, false);
   const P = cd.mkPointFixed("P", add(A.x, b), A.y, false);
@@ -33,8 +32,8 @@ const buildDiagram = async () => {
   const R = cd.mkPointFixed("R", sub(C.x, b), C.y, false);
   const D = cd.mkPointFixed("D", A.x, R.y, false);
   const S = cd.mkPointFixed("S", D.x, sub(A.y, a), false);
-  
-  const segments : Segment[] = [];
+
+  const segments: Segment[] = [];
   segments[0] = cd.mkSegment(S, A, "a", true);
   segments[1] = cd.mkSegment(A, P, "b", true);
   segments[2] = cd.mkSegment(P, S, "c", true);
@@ -48,7 +47,7 @@ const buildDiagram = async () => {
   segments[10] = cd.mkSegment(D, S, "b", true);
   segments[11] = cd.mkSegment(S, R, "c", true);
 
-  const triangles : Triangle[] = [];
+  const triangles: Triangle[] = [];
   const green = [0.176, 0.478, 0.129, 0.8];
   const blue = [0.176, 0.478, 0.839, 0.8];
   const red = [0.659, 0.114, 0.91, 0.8];
@@ -88,16 +87,16 @@ const buildDiagram = async () => {
 };
 
 export default function PythagoreanComputedConstructor() {
-    const diagram = useDiagram(buildDiagram);
-  
-    return (
-      <div
-        style={{
-          width: "50em",
-          height: "50em"
-        }}
-      >
-        <Renderer diagram={diagram} />
-      </div>
-    );
-  }
+  const diagram = useDiagram(buildDiagram);
+
+  return (
+    <div
+      style={{
+        width: "50em",
+        height: "50em",
+      }}
+    >
+      <Renderer diagram={diagram} />
+    </div>
+  );
+}
