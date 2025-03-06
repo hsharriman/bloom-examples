@@ -3,7 +3,7 @@ import { ConstructionsPage } from "./routes/Constructions";
 import { Header } from "./routes/Header";
 import { Home } from "./routes/Home";
 import { InteractiveExplanations } from "./routes/InteractiveExplanations";
-import { LabelCorrectionPage } from "./routes/Labels";
+import LabelCorrectionPage from "./routes/Labels";
 
 export const App = () => {
   return (
