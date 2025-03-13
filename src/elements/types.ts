@@ -64,6 +64,7 @@ export type ConstructionAction =
   | "mkSegment"
   | "mkLine"
   | "mkCircle"
+  | "mkTriangle"
   | "mkIntersections"
   | "mkEquilateralTriangle"
   | "mkLineExtension"
@@ -71,7 +72,15 @@ export type ConstructionAction =
   | "mkCopySegment"
   | "mkCutGivenLen"
   | "mkBisectAngle"
-  | "mkBisectSegment";
+  | "mkBisectSegment"
+  | "mkCollinear"
+  | "mkPerpendicularLine"
+  | "mkCopySegmentToSegment"
+  | "mkTriangleFromSegments"
+  | "mkLinesParallel"
+  | "mkCopyAngle"
+  | "mkParallelLine"
+  | "mkParallelLineBwPoints";
 
 export enum CObj {
   Point = "Point",

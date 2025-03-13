@@ -84,6 +84,42 @@ export const cutLengthStep = (
   description: `Cut ${p1}${p2} to length ${p1}${newPt} (selecting ${p1} -> ${p2})`,
 });
 
+export const copySegmentStep = (
+  s: string,
+  p: string,
+  newPt: string
+): ConstructionStep => ({
+  resultNames: [`${p}${newPt}`, newPt],
+  action: "mkCopySegment",
+  args: [s, p],
+  description: `Copy the segment ${s} to point ${p}`,
+});
+
+export const copySegmentOnSegmentStep = (
+  s: string,
+  s2: string,
+  p: string,
+  newPt: string
+): ConstructionStep => ({
+  resultNames: [`${p}${newPt}`, newPt],
+  action: "mkCopySegmentToSegment",
+  args: [s, s2, p],
+  description: `Copy the segment ${s} onto segment ${s2} starting from point ${p}`,
+});
+
+export const triangleStep = (
+  p1: string,
+  p2: string,
+  p3: string,
+  focus?: boolean
+): ConstructionStep => ({
+  resultNames: [`${p1}${p2}${p3}`, `${p1}${p2}`, `${p2}${p3}`, `${p1}${p3}`],
+  action: "mkTriangle",
+  focus,
+  args: [p1, p2, p3],
+  description: `Construct a triangle between points ${p1}, ${p2}, ${p3}`,
+});
+
 export const equilateralTriangleStep = (
   p1: string,
   p2: string,
@@ -99,4 +135,78 @@ export const equilateralTriangleStep = (
   action: "mkEquilateralTriangle",
   args: [p1, p2],
   description: `Construct an equilateral triangle with side length ${p1}${p2}`,
+});
+
+export const triangleFromSegmentStep = (
+  s1: string,
+  s2: string,
+  s3: string
+): ConstructionStep => ({
+  resultNames: [`${s1}${s2}${s3}`],
+  action: "mkTriangleFromSegments",
+  args: [s1, s2, s3],
+  description: `Construct a triangle with side lengths ${s1}, ${s2}, ${s3}`,
+});
+
+export const collinearStep = (s: string, p: string): ConstructionStep => ({
+  resultNames: [],
+  action: "mkCollinear",
+  args: [s, p],
+  description: `Make point ${p} lie on segment ${s}`,
+});
+
+// use for init steps only
+export const initLinesParallelStep = (
+  s1: string,
+  s2: string
+): ConstructionStep => ({
+  resultNames: [],
+  action: "mkLinesParallel",
+  args: [s1, s2],
+  description: `(usable in givens only) Make segments ${s1} and ${s2} parallel`,
+});
+
+export const moveAngleStep = (
+  p1: string,
+  p2: string,
+  p3: string,
+  newCorner: string
+): ConstructionStep => ({
+  resultNames: [],
+  action: "mkCopyAngle",
+  args: [p1, p2, p3],
+  description: `Copy angle ${p1}${p2}${p3} to ${newCorner}`,
+});
+
+export const parallelStep = (
+  s: string,
+  p: string,
+  newPt: string
+): ConstructionStep => ({
+  resultNames: [`${p}${newPt}`, newPt],
+  action: "mkParallelLine",
+  args: [s, p],
+  description: `Make a segment that is parallel to ${s} extending from ${p}`,
+});
+
+export const parallelStepBwPoints = (
+  s: string,
+  p: string,
+  p2: string
+): ConstructionStep => ({
+  resultNames: [`${p}${p2}`],
+  action: "mkParallelLineBwPoints",
+  args: [s, p, p2],
+  description: `Make a segment that is parallel to ${s} between ${p} and ${p2}`,
+});
+
+export const perpendicularStep = (
+  s: string,
+  corner: string,
+  newPt: string
+): ConstructionStep => ({
+  resultNames: [`${corner}${newPt}`, newPt],
+  action: "mkPerpendicularLine",
+  args: [s, corner],
+  description: `Construct a line that is perpendicular to ${s} from ${corner}`,
 });

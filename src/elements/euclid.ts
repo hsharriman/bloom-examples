@@ -407,6 +407,33 @@ export class Construction {
   mkTriangle = (p1: Point, p2: Point, p3: Point, focus?: boolean): Triangle => {
     const t: Triangle = {
       tag: "Triangle",
+      p1p2: this.getOrCreateSegment(p1, p2),
+      p2p3: this.getOrCreateSegment(p2, p3),
+      p1p3: this.getOrCreateSegment(p1, p3),
+      p1,
+      p2,
+      p3,
+      icon: this.db.polygon({
+        points: [p1.pos, p2.pos, p3.pos],
+        strokeWidth: lineLikeWidth,
+        fillColor: [0, 0, 0, 0],
+        strokeColor: focus ? lineLikeColor : unfocusColor,
+      }),
+    };
+    return t;
+  };
+
+  mkTriangleFromSegments = (
+    s1: Segment,
+    s2: Segment,
+    s3: Segment,
+    focus?: boolean
+  ): Triangle => {
+    const p1 = this.mkPoint({ focus });
+    const p2 = this.mkPoint({ focus });
+    const p3 = this.mkPoint({ focus });
+    const t: Triangle = {
+      tag: "Triangle",
       p1p2: this.mkSegment(p1, p2),
       p2p3: this.mkSegment(p2, p3),
       p1p3: this.mkSegment(p1, p3),
@@ -415,10 +442,15 @@ export class Construction {
       p3,
       icon: this.db.polygon({
         points: [p1.pos, p2.pos, p3.pos],
-        fillColor: focus ? lineLikeColor : unfocusColor,
+        strokeColor: focus ? lineLikeColor : unfocusColor,
         strokeWidth: lineLikeWidth,
       }),
     };
+
+    this.ensureEqualLength(s1, t.p1p2);
+    this.ensureEqualLength(s2, t.p2p3);
+    this.ensureEqualLength(s3, t.p1p3);
+
     return t;
   };
 
@@ -458,6 +490,31 @@ export class Construction {
     return [s2, p3];
   };
 
+  mkLinesParallel = (s1: Segment, s2: Segment): Segment[] => {
+    const v1 = ops.vsub(s1.point2.pos, s1.point1.pos);
+    const v2 = ops.vsub(s2.point2.pos, s2.point1.pos);
+    this.db.ensure(objectives.equal(ops.cross2(v1, v2), 0));
+    return [];
+  };
+
+  mkParallelLine = (s1: Segment, p: Point): [Segment, Point] => {
+    const p2 = this.mkPoint({});
+    const s2 = this.mkSegment(p, p2);
+    const v1 = ops.vsub(s1.point2.pos, s1.point1.pos);
+    const v2 = ops.vsub(s2.point2.pos, s2.point1.pos);
+    this.db.ensure(objectives.equal(ops.cross2(v1, v2), 0));
+    return [s2, p2];
+  };
+
+  mkParallelLineBwPoints = (s1: Segment, p: Point, newPt: Point): [Segment] => {
+    const p2 = this.getOrCreatePoint(newPt);
+    const s2 = this.mkSegment(p, p2);
+    const v1 = ops.vsub(s1.point2.pos, s1.point1.pos);
+    const v2 = ops.vsub(s2.point2.pos, s2.point1.pos);
+    this.db.ensure(objectives.equal(ops.cross2(v1, v2), 0));
+    return [s2];
+  };
+
   mkEqualSegment = (s: Segment, p1: Point, p2: Point): Segment => {
     // enforce that 2 segments are the same length
     const seg = this.mkSegment(p1, p2);
@@ -473,12 +530,51 @@ export class Construction {
     return [s2, p2];
   };
 
-  mkBisectAngle = (
-    // TODO check that corner isn't overlapping with s1 and s2 points
+  mkCopyAngle = (
     p1: Point,
     corner: Point,
-    p2: Point
+    p2: Point,
+    newCorner: Point
+  ): [Segment, Segment] => {
+    // Copy an angle to a new pt
+    const np1 = this.mkPoint({});
+    const np3 = this.mkPoint({});
+    const s2 = this.mkSegment(np1, newCorner);
+    const s3 = this.mkSegment(np3, newCorner);
+    this.db.ensure(
+      constraints.equal(
+        ops.vdist(p1.pos, corner.pos),
+        ops.vdist(np1.pos, newCorner.pos)
+      )
+    );
+    this.db.ensure(
+      constraints.equal(
+        ops.vdist(p2.pos, corner.pos),
+        ops.vdist(np3.pos, newCorner.pos)
+      )
+    );
+    return [s2, s3];
+  };
+
+  mkCopySegmentToSegment = (
+    s: Segment,
+    s2: Segment,
+    p: Point
   ): [Segment, Point] => {
+    // Copy a segment to a point on segment s2
+    const p2 = this.mkPoint({});
+    const s3 = this.mkSegment(p, p2);
+    this.db.ensure(
+      constraints.collinearOrdered(s2.point1.pos, p.pos, s2.point2.pos)
+    );
+    this.db.ensure(
+      constraints.collinearOrdered(s2.point1.pos, p2.pos, s2.point2.pos)
+    );
+    this.ensureEqualLength(s, s3);
+    return [s3, p2];
+  };
+
+  mkBisectAngle = (p1: Point, corner: Point, p2: Point): [Segment, Point] => {
     // Cut an angle in half
     const p3 = this.mkPoint({});
     const bisector = this.mkSegment(corner, p3);
@@ -489,16 +585,23 @@ export class Construction {
     return [bisector, p3];
   };
 
-  mkBisectSegment = (s: Segment): [Segment, Segment, Point] => {
+  mkBisectSegment = (s: Segment, p: Point): [Segment, Segment] => {
     // cut a segment in half
-    const midpt = this.mkPoint({});
-    const s2 = this.mkSegment(s.point1, midpt);
-    const s3 = this.mkSegment(midpt, s.point2);
+    const s2 = this.mkSegment(s.point1, p);
+    const s3 = this.mkSegment(p, s.point2);
     this.db.ensure(
-      constraints.collinearOrdered(s.point1.pos, midpt.pos, s.point2.pos)
+      constraints.collinearOrdered(s.point1.pos, p.pos, s.point2.pos)
     );
     this.ensureEqualLength(s2, s3);
-    return [s2, s3, midpt];
+    return [s2, s3];
+  };
+
+  mkPerpendicularLine = (s: Segment, p: Point): [Segment, Point] => {
+    // make a line perpendicular to a segment
+    const p2 = this.mkPoint({});
+    const s2 = this.mkSegment(p, p2);
+    this.db.ensure(constraints.perpendicular(s.point1.pos, p.pos, p2.pos));
+    return [s2, p2];
   };
 
   mkCutGivenLen = (
@@ -513,6 +616,13 @@ export class Construction {
     this.db.ensure(constraints.equal(ops.vnorm(ops.vsub(p1.pos, p2.pos)), len));
     this.db.ensure(constraints.collinearOrdered(p1.pos, p3.pos, p2.pos));
     return [p3, s2];
+  };
+
+  mkCollinear = (s: Segment, p: Point): Point[] => {
+    this.db.ensure(
+      constraints.collinearOrdered(s.point1.pos, p.pos, s.point2.pos)
+    );
+    return [];
   };
 
   setSelected = (element: ConstructionElement, active = true): void => {
@@ -748,5 +858,22 @@ export class Construction {
       return "A";
     }
     return String.fromCharCode(letter.toUpperCase().charCodeAt(0) + 1);
+  };
+
+  private getOrCreateSegment = (p1: Point, p2: Point): Segment => {
+    const segs: Segment[] = this.elements.filter(
+      (el) => el.tag === "Segment"
+    ) as Segment[];
+    return (
+      segs.find((s) => s.point1 === p1 && s.point2 === p2) ||
+      this.mkSegment(p1, p2)
+    );
+  };
+
+  private getOrCreatePoint = (p1: Point): Point => {
+    const pts: Point[] = this.elements.filter(
+      (el) => el.tag === "Point"
+    ) as Point[];
+    return pts.find((p) => p === p1) || this.mkPoint({});
   };
 }

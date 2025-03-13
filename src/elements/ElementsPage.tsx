@@ -22,7 +22,7 @@ export interface ConstructionStep {
 
 export interface ConstructionDescription {
   name: string;
-  inputs: ConstructionElement["tag"][];
+  // inputs: ConstructionElement["tag"][]; unused
   initSteps: ConstructionStep[]; // only for walkthrough
   steps: ConstructionStep[];
   id: number;
@@ -147,6 +147,67 @@ export default function ElementsWalkthrough(props: {
             step.focus
           );
           break;
+        case "mkCollinear":
+          obj = construction.mkCollinear(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Point
+          );
+          break;
+        case "mkBisectSegment":
+          obj = construction.mkBisectSegment(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Point
+          );
+          break;
+        case "mkPerpendicularLine":
+          obj = construction.mkPerpendicularLine(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Point
+          );
+          break;
+        case "mkCopySegmentToSegment":
+          obj = construction.mkCopySegmentToSegment(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Segment,
+            nameElementMap.get(step.args[2]) as Point
+          );
+          break;
+        case "mkTriangle":
+          obj = construction.mkTriangle(
+            nameElementMap.get(step.args[0]) as Point,
+            nameElementMap.get(step.args[1]) as Point,
+            nameElementMap.get(step.args[2]) as Point,
+            step.focus
+          );
+          break;
+        case "mkTriangleFromSegments":
+          obj = construction.mkTriangleFromSegments(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Segment,
+            nameElementMap.get(step.args[2]) as Segment
+          );
+          break;
+        case "mkCopyAngle":
+          obj = construction.mkCopyAngle(
+            nameElementMap.get(step.args[0]) as Point,
+            nameElementMap.get(step.args[1]) as Point,
+            nameElementMap.get(step.args[2]) as Point,
+            nameElementMap.get(step.args[3]) as Point
+          );
+          break;
+        case "mkParallelLine":
+          obj = construction.mkParallelLine(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Point
+          );
+          break;
+        case "mkParallelLineBwPoints":
+          obj = construction.mkParallelLineBwPoints(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Point,
+            nameElementMap.get(step.args[2]) as Point
+          );
+          break;
         default:
           console.error("Unexpected action: ", step.action);
           break;
@@ -196,6 +257,9 @@ export default function ElementsWalkthrough(props: {
       case "mkSegment":
       case "mkLine":
       case "mkEquilateralTriangle":
+      case "mkTriangle":
+      case "mkTriangleFromSegments":
+      case "mkLinesParallel":
       case "mkIntersections":
         return [
           (argNames[0] === correctStep.args[0] &&
@@ -212,6 +276,8 @@ export default function ElementsWalkthrough(props: {
       case "mkLineExtension":
       case "mkCircle":
       case "mkCopySegment":
+      case "mkCollinear":
+      case "mkPerpendicularLine":
       case "mkCutGivenLen":
         console.log("checking order matters ", argNames, correctStep.args);
         return [
@@ -220,6 +286,9 @@ export default function ElementsWalkthrough(props: {
           `order matters: ${argNames}, correct: ${correctStep.args}`,
         ];
       case "mkBisectAngle":
+      case "mkParallelLine":
+      case "mkParallelLineBwPoints":
+      case "mkCopySegmentToSegment":
         return [
           argNames[0] === correctStep.args[0] &&
             argNames[1] === correctStep.args[1] &&
@@ -234,6 +303,14 @@ export default function ElementsWalkthrough(props: {
               (argNames[2] === correctStep.args[1] &&
                 argNames[1] === correctStep.args[2])),
           `first obj must be segment, second 2 are points: ${argNames}, correct: ${correctStep.args}`,
+        ];
+      case "mkCopyAngle":
+        return [
+          argNames[0] === correctStep.args[0] &&
+            argNames[1] === correctStep.args[1] &&
+            argNames[2] === correctStep.args[2] &&
+            argNames[3] === correctStep.args[3],
+          `order matters: ${argNames}, correct: ${correctStep.args}`,
         ];
     }
   };
@@ -402,6 +479,105 @@ export default function ElementsWalkthrough(props: {
     );
   };
 
+  const addBisectAngleOnClick = () => {
+    addAction(
+      "mkBisectAngle",
+      [CObj.Point],
+      ([A, B, C]: ConstructionElement[]) =>
+        construction.mkBisectAngle(A as Point, B as Point, C as Point)
+    );
+  };
+
+  const addCollinearOnClick = () => {
+    addAction(
+      "mkCollinear",
+      [CObj.Point, CObj.Segment],
+      ([A, B]: ConstructionElement[]) =>
+        construction.mkCollinear(A as Segment, B as Point)
+    );
+  };
+  const addBisectSegmentOnClick = () => {
+    addAction(
+      "mkBisectSegment",
+      [CObj.Segment, CObj.Point],
+      ([A, B]: ConstructionElement[]) =>
+        construction.mkBisectSegment(A as Segment, B as Point)
+    );
+  };
+
+  const addPerpendicularOnClick = () => {
+    addAction(
+      "mkPerpendicularLine",
+      [CObj.Segment, CObj.Point],
+      ([A, B]: ConstructionElement[]) =>
+        construction.mkPerpendicularLine(A as Segment, B as Point)
+    );
+  };
+
+  const addTriangleOnClick = () => {
+    addAction("mkTriangle", [CObj.Point], ([A, B, C]: ConstructionElement[]) =>
+      construction.mkTriangle(A as Point, B as Point, C as Point)
+    );
+  };
+
+  const addTriangleFromSegmentsOnClick = () => {
+    addAction(
+      "mkTriangleFromSegments",
+      [CObj.Segment],
+      ([A, B, C]: ConstructionElement[]) =>
+        construction.mkTriangleFromSegments(
+          A as Segment,
+          B as Segment,
+          C as Segment
+        )
+    );
+  };
+
+  const addCopySegmentToSegmentOnClick = () => {
+    addAction(
+      "mkCopySegmentToSegment",
+      [CObj.Segment, CObj.Point],
+      ([A, B, C]: ConstructionElement[]) =>
+        construction.mkCopySegmentToSegment(
+          A as Segment,
+          B as Segment,
+          C as Point
+        )
+    );
+  };
+
+  // TODO
+  const addMakeLinesParallel = () => {
+    addAction(
+      "mkParallelLine",
+      [CObj.Segment, CObj.Point],
+      ([A, B]: ConstructionElement[]) =>
+        construction.mkParallelLine(A as Segment, B as Point)
+    );
+  };
+
+  const addMakeParallelLineBwPoints = () => {
+    addAction(
+      "mkParallelLineBwPoints",
+      [CObj.Segment, CObj.Point],
+      ([A, B, C]: ConstructionElement[]) =>
+        construction.mkParallelLineBwPoints(
+          A as Segment,
+          B as Point,
+          C as Point
+        )
+    );
+  };
+
+  const addCopyAngle = () => {
+    addAction(
+      "mkCopyAngle",
+      [CObj.Point],
+      ([A, B, C, D]: ConstructionElement[]) =>
+        construction.mkCopyAngle(A as Point, B as Point, C as Point, D as Point)
+    );
+  };
+
   const addAction = (
     methodName: SetStateAction<ConstructionAction | null>,
     args: CObj[],
@@ -446,35 +622,122 @@ export default function ElementsWalkthrough(props: {
           <div className="font-bold text-black text-2xl pb-2 pt-4">
             Construction Actions
           </div>
-          {ActionButton("Add Point", currAction !== null, addPointOnClick)}
-          {ActionButton("Add Segment", currAction !== null, addSegmentOnClick)}
-          {ActionButton("Add Line", currAction !== null, addLineOnClick)}
-          {ActionButton("Add Circle", currAction !== null, addCircleOnClick)}
-          {ActionButton(
-            "Add Intersections",
-            currAction !== null,
-            addIntersectionsOnClick
-          )}
-          {ActionButton(
-            "Add Equilateral Triangle",
-            currAction !== null,
-            addEquilatOnClick
-          )}
-          {ActionButton(
-            "Extend Line",
-            currAction !== null,
-            addLineExtensionOnClick
-          )}
-          {ActionButton(
-            "Copy Segment",
-            currAction !== null,
-            addCopySegmentOnClick
-          )}
-          {ActionButton(
-            "Cut Length",
-            currAction !== null,
-            addCutSegmentOnClick
-          )}
+          <div className="max-h-[600px] flex flex-col flex-wrap gap-x-4">
+            {ActionButton(
+              "Add Point",
+              currAction !== null,
+              addPointOnClick,
+              true
+            )}
+            {ActionButton(
+              "Add Segment",
+              currAction !== null,
+              addSegmentOnClick,
+              true
+            )}
+            {ActionButton(
+              "Add Line",
+              currAction !== null,
+              addLineOnClick,
+              true
+            )}
+            {ActionButton(
+              "Add Circle",
+              currAction !== null,
+              addCircleOnClick,
+              true
+            )}
+            {ActionButton(
+              "Add Intersections",
+              currAction !== null,
+              addIntersectionsOnClick,
+              true
+            )}
+            {ActionButton(
+              "Add Equilateral Triangle",
+              currAction !== null,
+              addEquilatOnClick,
+              description.id > 2
+            )}
+            {ActionButton(
+              "Extend Line",
+              currAction !== null,
+              addLineExtensionOnClick,
+              description.id > 2
+            )}
+            {ActionButton(
+              "Copy Segment",
+              currAction !== null,
+              addCopySegmentOnClick,
+              description.id > 3
+            )}
+            {ActionButton(
+              "Cut Length",
+              currAction !== null,
+              addCutSegmentOnClick,
+              description.id > 4
+            )}
+            {ActionButton(
+              "Bisect Angle",
+              currAction !== null,
+              addBisectAngleOnClick,
+              description.id > 6
+            )}
+            {ActionButton(
+              "Make Point Collinear",
+              currAction !== null,
+              addCollinearOnClick,
+              description.id > 6
+            )}
+            {ActionButton(
+              "Bisect Segment",
+              currAction !== null,
+              addBisectSegmentOnClick,
+              description.id > 7
+            )}
+            {ActionButton(
+              "Make Perpendicular Line",
+              currAction !== null,
+              addPerpendicularOnClick,
+              description.id > 8
+            )}
+            {ActionButton(
+              "Add Triangle",
+              currAction !== null,
+              addTriangleOnClick,
+              description.id > 9
+            )}
+            {ActionButton(
+              "Copy segment onto a segment",
+              currAction !== null,
+              addCopySegmentToSegmentOnClick,
+              description.id > 11
+            )}
+            {ActionButton(
+              "Add triangle from 3 segments",
+              currAction !== null,
+              addTriangleFromSegmentsOnClick,
+              description.id > 12
+            )}
+            {ActionButton(
+              "Copy Angle to a point",
+              currAction !== null,
+              addCopyAngle,
+              description.id > 14
+            )}
+            {ActionButton(
+              "Make a parallel segment",
+              currAction !== null,
+              addMakeLinesParallel,
+              description.id > 15 // TODO: update this
+            )}
+            {ActionButton(
+              "Make a parallel segment between two points",
+              currAction !== null,
+              addMakeParallelLineBwPoints,
+              description.id > 16
+            )}
+          </div>
         </div>
 
         <div
