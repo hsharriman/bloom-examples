@@ -77,7 +77,7 @@ export const Dropdown = (props: DropdownProps) => {
         aria-labelledby="menu-button"
         tabIndex={-1}
       >
-        <div className="py-1" role="none">
+        <div className="py-1 overflow-scroll max-h-[400px]" role="none">
           {listItems}
         </div>
       </div>
