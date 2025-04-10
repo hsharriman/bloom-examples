@@ -17,6 +17,9 @@ export class Header extends React.Component {
           <NavLink to="/vegalite-labels" className={linkCSS + "bg-fuchsia-200"}>
             Bloom Examples
           </NavLink>
+          <NavLink to={"/performance"} className={linkCSS + "bg-green-200"}>
+            Performance
+          </NavLink>
         </div>
 
         <Outlet />

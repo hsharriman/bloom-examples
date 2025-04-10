@@ -10,7 +10,7 @@ import {
   useDiagram,
   Vec2,
   mul,
-  ops, neg, div
+  ops, neg, div, angleBetween, angleFrom
 } from "@penrose/bloom";
 import {ChangeEvent, useEffect, useMemo, useState} from "react";
 import {Num} from "@penrose/core";
@@ -55,19 +55,19 @@ const buildDiagram = async (numChords: number) => {
   })
 
   let prod: Num = 1;
+  const chords = [];
   for (let i = 0; i < numChords; i++) {
-    const angle = 2 * Math.PI / numChords * i;
-    const delta = [Math.cos(angle) * mainCircleRad, Math.sin(angle) * mainCircleRad];
     const chord = line({
       start: draggableCenter.center,
-      end: ops.vadd(mainCircleCenter, delta) as Vec2,
       strokeWidth: i == 0 ? 3 : 2,
       strokeColor: i == 0 ? [1, 0, 0, 1] : [0, 0, 0, 1],
     });
+    chords.push(chord);
 
+    const disp = ops.vsub(chord.end, mainCircleCenter);
     equation({
       string: `\\zeta_{${i}}`,
-      center: ops.vadd(mainCircleCenter, ops.vmul(1.1, delta)) as Vec2,
+      center: ops.vadd(mainCircleCenter, ops.vmul(1.1, disp)) as Vec2,
     });
 
     layer(chord, draggableCenter);
@@ -75,6 +75,22 @@ const buildDiagram = async (numChords: number) => {
     if (i > 0) {
       prod = mul(prod, div(ops.vdist(chord.end, chord.start), mainCircleRad));
     }
+  }
+
+  ensure(constraints.equal(ops.vsub(chords[0].end, mainCircleCenter)[0], mainCircleRad));
+
+  const targetAngle = 2 * Math.PI / numChords;
+  const center = mainCircleCenter;
+  for (let i = 0; i < numChords - 1; i++) {
+    const v1 = ops.vsub(chords[i].end, center);
+    const v2 = ops.vsub(chords[(i + 1) % numChords].end, center);
+    const theta = angleFrom(v1, v2);
+    ensure(constraints.equal(theta, targetAngle));
+  }
+
+  for (let i = 0; i < numChords; i++) {
+    const distFromCenter = ops.vdist(chords[i].end, mainCircleCenter);
+    ensure(constraints.equal(distFromCenter, mainCircleRad));
   }
 
   equation({
@@ -118,12 +134,20 @@ export default function ChordProductDiagram() {
     setNumChords(Number.parseInt((e.target as HTMLInputElement).value));
   }, []);
 
+  const rounded = Math.round(product * 1000) / 1000;
+
   return (
     <div>
       <div style={{ width: "50em" }}>
         <Renderer diagram={diagram} />
       </div>
-      <p>product: {product}</p>
+      {/* show product with only 3 decimal places */}
+      <p style={{
+        position: "relative",
+        left: "480px",
+        bottom: "100px",
+        font: "bold 18px monospace",
+      }}>Chord Length Product: {rounded.toFixed(2)}</p>
       <input style={{ margin: "auto", width: "100%" }} type={"range"} min={2} max={20} onChange={onSliderChange} value={numChords}/>
     </div>
   );

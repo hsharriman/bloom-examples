@@ -9,8 +9,6 @@ const buildDiagram = async () => {
   const topEdge = height / 2 - margin;
   const square1_x = leftEdge;
   const square1_y = topEdge - 200;
-  const square2_x = 0;
-  const square2_y = topEdge - 200;
   const cd = new ConstructionDomain(width, height);
 
   const Y = cd.mkPointFixed("Y", leftEdge, topEdge);
@@ -57,6 +55,9 @@ const buildDiagram = async () => {
   triangles[1] = cd.mkTriangle(P, B, Q, blue);
   triangles[2] = cd.mkTriangle(Q, C, R, red);
   triangles[3] = cd.mkTriangle(R, D, S, purple);
+
+  const square2_x = 0;
+  const square2_y = topEdge - 200;
 
   const p1 = cd.mkPointFixed("p1", square2_x, square2_y, false);
   const p2 = cd.mkPointFixed("p2", add(p1.x, b), p1.y, false);

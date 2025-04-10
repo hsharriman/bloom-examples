@@ -18,6 +18,8 @@ import {
   div
 } from "@penrose/bloom";
 import {ChangeEvent, useEffect, useMemo, useState} from "react";
+import {circleToImplicitEllipse} from "@penrose/core/dist/lib/ImplicitShapes";
+import {Num} from "@penrose/core";
 
 const hsvToRgb = (h: number, s: number, v: number): number[] => {
   let r, g, b;
@@ -109,21 +111,46 @@ const buildDiagram = async (numSlices: number = 5) => {
   forall({ r: SliceRect }, ({ r }) => {
     r.rect = rectangle({
       center: [200, 0],
-      width: mul(circleRad, Math.PI),
+      width: circleRad * Math.PI,
       height: circleRad,
       fillColor: [0, 0, 0, 0],
       strokeColor: [0, 0, 0, 1],
       strokeWidth: 2,
     });
 
-    let nextBase = ops.vsub(r.rect.center, ops.vmul(0.5, [r.rect.width, r.rect.height])) as Vec2;
-    let nextEnd = ops.vadd(nextBase, ops.vmul(circleRad, [neg(sin(sliceAngle / 2)), cos(sliceAngle / 2)])) as Vec2;
-    const dx = mul(2 * circleRad, sin(sliceAngle / 2));
     const gs = [];
+
+    const rectTop = r.rect.center[1] + r.rect.height / 2;
+    const rectBottom = r.rect.center[1] - r.rect.height / 2;
+    const rectLeft = r.rect.center[0] - r.rect.width / 2;
+    const rectRight = r.rect.center[0] + r.rect.width / 2;
+
+    const sliceCenters: Vec2[] = [];
+    const separation = input();
+    let lastX: Num = input();
     for (let i = 0; i < numSlices; i++) {
-      const v0 = nextBase
-      const v1 = nextEnd;
-      const v2 = ops.vadd(v1, [dx, 0]) as Vec2;
+      const center: Vec2 = [
+        add(lastX, separation),
+        i % 2 == 0 ?
+          rectBottom
+          : rectBottom + Math.cos(sliceAngle / 2) * circleRad
+      ];
+      lastX = center[0];
+      sliceCenters.push(center);
+    }
+
+    ensure(constraints.equal(sliceCenters[0][0], rectLeft));
+    ensure(constraints.equal(sliceCenters[numSlices - 1][0], rectRight));
+
+    for (let i = 0; i < numSlices; i++) {
+      // alternate up and down
+      const v0 = sliceCenters[i];
+      const v1 = i % 2 == 0 ?
+        ops.vadd(v0, ops.vmul(circleRad, [neg(sin(sliceAngle / 2)), cos(sliceAngle / 2)]))
+        : ops.vadd(v0, ops.vmul(circleRad, [neg(sin(sliceAngle / 2)), neg(cos(sliceAngle / 2))]));
+      const v2 = i % 2 == 0 ?
+        ops.vadd(v0, ops.vmul(circleRad, [sin(sliceAngle / 2), cos(sliceAngle / 2)]))
+        : ops.vadd(v0, ops.vmul(circleRad, [sin(sliceAngle / 2), neg(cos(sliceAngle / 2))]));
 
       const v1prime = ops.vadd(v0, ops.vmul(2, ops.vsub(v1, v0))) as Vec2;
       const v2prime = ops.vadd(v0, ops.vmul(2, ops.vsub(v2, v0))) as Vec2;
@@ -132,6 +159,7 @@ const buildDiagram = async (numSlices: number = 5) => {
         r: circleRad,
         center: v0,
         fillColor: hsvToRgb(i / numSlices, 1, 1),
+        ensureOnCanvas: false,
       });
 
       const g = group({
@@ -139,11 +167,9 @@ const buildDiagram = async (numSlices: number = 5) => {
         clipPath: polygon({
           points: [v0, v1prime, v2prime]
         }),
+        ensureOnCanvas: false
       });
       gs.push(g);
-
-      nextBase = v2;
-      nextEnd = v0;
 
       layer(g, r.rect);
     }

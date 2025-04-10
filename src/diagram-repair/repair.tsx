@@ -4,6 +4,7 @@ import {mul, Num, ops} from "@penrose/core";
 import {bboxFromShape} from "@penrose/core/dist/lib/Queries";
 import {toPenroseShape} from "@penrose/bloom/dist/core/utils";
 import {ActionButton} from "../elements/components/ActionButton";
+import {InstrumentDiagram} from "../measurement/performance_page.tsx";
 
 export default function DiagramRepair(
   props: {
@@ -29,7 +30,7 @@ export default function DiagramRepair(
 
       const selectorIcon = props.db.rectangle({
         fillColor: [0, 0, 0, 0],
-        strokeWidth: 2,
+        strokeWidth: 1,
         strokeColor: ops.vmul(opacity, [1, 0, 0, 1]),
         width: bbox.width,
         height: bbox.height,
@@ -53,16 +54,19 @@ export default function DiagramRepair(
         console.log(selected.current);
         setDummy(d => !d);
       });
+    }, []);
 
+    props.selectable.map(s => {
       props.selectable.map(t => {
         if (t === s) return;
-        for (const [constrName, constr] of props.possibleConstraints.entries()) {
+        for (const [constrName, constr]
+              of props.possibleConstraints.entries()) {
           const constrInputName = `${s.name}-${t.name}-${constrName}`;
           const constrInput = props.db.input({ name: constrInputName, init: 0, optimized: false });
           props.db.ensure(mul(constr(s, t), constrInput));
         }
       });
-    }, []);
+    });
 
     props.db.build().then(setDiagram);
   }, [props.db, props.selectable]);
