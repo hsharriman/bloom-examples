@@ -85,12 +85,16 @@ const labelDistMin = 5;
   return String.fromCharCode(letter.charCodeAt(0) + 1);
 };
 export class Construction {
-  readonly db = new DiagramBuilder(canvas(canvasWidth, canvasHeight), "", 1000);
+  readonly db; // <- TODO seed go here
   readonly elements: ConstructionElement[] = [];
   readonly labels: BloomEquation[] = [];
 
   private nextPointId = 0;
   private ptLabels: string[] = [];
+
+  constructor(seed?: string) {
+    this.db = new DiagramBuilder(canvas(canvasWidth, canvasHeight), seed, 1000);
+  }
 
   mkPoint = (props: MkPointProps): Point => {
     const id = this.nextPointId++;
@@ -115,27 +119,27 @@ export class Construction {
 
     const icon = this.db.circle({
       r: pointRad,
-      fillColor: props.focus ? pointColor : unfocusColor,
+      fillColor: pointColor,
       center: [cx, cy],
       drag: draggable,
     });
 
-    if (props.label) {
-      if (new Set(this.ptLabels).has(props.label)) {
+    let label = props.label;
+    if (label) {
+      if (new Set(this.ptLabels).has(label)) {
         console.error("Label already exists: ", props.label);
+      } else {
+        this.ptLabels.push(label);
       }
     } else {
-      this.ptLabels.push(
-        this.nextLetter(this.ptLabels[this.ptLabels.length - 1] || "A")
-      );
+      label = this.nextLetter(this.ptLabels[this.ptLabels.length - 1] || "A");
+      this.ptLabels.push(label);
     }
-    let label_ = undefined;
-    if (props.label !== undefined) {
-      label_ = this.mkLabel(props.label);
-      const toCenter = ops.vnorm(ops.vsub(label_.center, [cx, cy]));
-      this.db.ensure(constraints.lessThan(labelDistMin, toCenter));
-      this.db.ensure(constraints.lessThan(toCenter, labelDistMax));
-    }
+    const label_ = this.mkLabel(label);
+    const toCenter = ops.vnorm(ops.vsub(label_.center, [cx, cy]));
+    this.db.encourage(constraints.equal(toCenter, labelDistMax));
+    // this.db.encourage(constraints.lessThan(labelDistMin, toCenter));
+    // this.db.encourage(constraints.lessThan(toCenter, labelDistMax));
 
     const selectedIcon = this.db.circle({
       r: pointRad + 2,
@@ -154,7 +158,7 @@ export class Construction {
       tag: "Point",
       pos: [cx, cy],
       icon,
-      label: label_,
+      // label: label_,
       id,
     };
 
@@ -172,7 +176,7 @@ export class Construction {
       start: point1.pos,
       end: point2.pos,
       strokeWidth: lineLikeWidth,
-      strokeColor: focus ? lineLikeColor : unfocusColor,
+      strokeColor: lineLikeColor,
     });
 
     let label_ = undefined;
@@ -225,63 +229,6 @@ export class Construction {
 
     this.addElement(segment);
     return segment;
-  };
-
-  mkLine = (
-    point1: Point,
-    point2: Point,
-    label?: string,
-    focus?: boolean
-  ): Line => {
-    const lineNorm = ops.vnormalize(ops.vsub(point2.pos, point1.pos));
-    const midpoint = ops.vmul(0.5, ops.vadd(point1.pos, point2.pos));
-
-    const icon = this.db.line({
-      start: ops.vadd(midpoint, ops.vmul(1000, lineNorm)) as Vec2,
-      end: ops.vadd(midpoint, ops.vmul(-1000, lineNorm)) as Vec2,
-      strokeWidth: lineLikeWidth,
-      strokeColor: focus ? lineLikeColor : unfocusColor,
-      ensureOnCanvas: false,
-    });
-
-    let label_ = undefined;
-    if (label !== undefined) {
-      label_ = this.mkLabel(label);
-      const t = dot(lineNorm, ops.vsub(label_.center, point1.pos));
-      const proj = ops.vadd(point1.pos, ops.vmul(t, lineNorm));
-      const toProj = ops.vdist(proj, label_.center);
-      this.db.ensure(constraints.lessThan(labelDistMin, toProj));
-      this.db.ensure(constraints.lessThan(toProj, labelDistMax));
-    }
-
-    const selectedIcon = this.db.line({
-      start: icon.start,
-      end: icon.end,
-      strokeWidth: lineLikeWidth + 2,
-      strokeColor: [
-        1,
-        0,
-        0,
-        this.db.input({
-          init: 0,
-          name: `selected-${point1.id}<->${point2.id}`,
-          optimized: false,
-        }),
-      ],
-      ensureOnCanvas: false,
-    });
-    this.db.layer(selectedIcon, icon);
-
-    const line: Line = {
-      tag: "Line",
-      point1,
-      point2,
-      icon,
-      label: label_,
-    };
-
-    this.addElement(line);
-    return line;
   };
 
   mkCircle = (
@@ -493,7 +440,7 @@ export class Construction {
   mkLinesParallel = (s1: Segment, s2: Segment): Segment[] => {
     const v1 = ops.vsub(s1.point2.pos, s1.point1.pos);
     const v2 = ops.vsub(s2.point2.pos, s2.point1.pos);
-    this.db.ensure(objectives.equal(ops.cross2(v1, v2), 0));
+    this.db.ensure(objectives.equal(ops.vdot(v1, v2), 0));
     return [];
   };
 
@@ -502,7 +449,7 @@ export class Construction {
     const s2 = this.mkSegment(p, p2);
     const v1 = ops.vsub(s1.point2.pos, s1.point1.pos);
     const v2 = ops.vsub(s2.point2.pos, s2.point1.pos);
-    this.db.ensure(objectives.equal(ops.cross2(v1, v2), 0));
+    this.db.ensure(objectives.equal(ops.vdot(v1, v2), 0));
     return [s2, p2];
   };
 
@@ -556,22 +503,17 @@ export class Construction {
     return [s2, s3];
   };
 
-  mkCopySegmentToSegment = (
-    s: Segment,
-    s2: Segment,
-    p: Point
-  ): [Segment, Point] => {
+  mkCopySegmentToSegment = (s: Segment, p1: Point, p2: Point): [Point] => {
     // Copy a segment to a point on segment s2
-    const p2 = this.mkPoint({});
-    const s3 = this.mkSegment(p, p2);
+    const p3 = this.mkPoint({});
+    this.db.ensure(constraints.collinearOrdered(p1.pos, p3.pos, p2.pos));
     this.db.ensure(
-      constraints.collinearOrdered(s2.point1.pos, p.pos, s2.point2.pos)
+      constraints.equal(
+        ops.vdist(p1.pos, p3.pos),
+        ops.vdist(s.point1.pos, s.point2.pos)
+      )
     );
-    this.db.ensure(
-      constraints.collinearOrdered(s2.point1.pos, p2.pos, s2.point2.pos)
-    );
-    this.ensureEqualLength(s, s3);
-    return [s3, p2];
+    return [p3];
   };
 
   mkBisectAngle = (p1: Point, corner: Point, p2: Point): [Segment, Point] => {
@@ -585,22 +527,26 @@ export class Construction {
     return [bisector, p3];
   };
 
-  mkBisectSegment = (s: Segment, p: Point): [Segment, Segment] => {
+  mkBisectSegment = (p1: Point, p2: Point): [Point] => {
+    const p3 = this.mkPoint({});
     // cut a segment in half
-    const s2 = this.mkSegment(s.point1, p);
-    const s3 = this.mkSegment(p, s.point2);
+    this.db.ensure(constraints.collinearOrdered(p1.pos, p3.pos, p2.pos));
     this.db.ensure(
-      constraints.collinearOrdered(s.point1.pos, p.pos, s.point2.pos)
+      constraints.equal(ops.vdist(p1.pos, p3.pos), ops.vdist(p3.pos, p2.pos))
     );
-    this.ensureEqualLength(s2, s3);
-    return [s2, s3];
+    return [p3];
   };
 
   mkPerpendicularLine = (s: Segment, p: Point): [Segment, Point] => {
     // make a line perpendicular to a segment
     const p2 = this.mkPoint({});
     const s2 = this.mkSegment(p, p2);
-    this.db.ensure(constraints.perpendicular(s.point1.pos, p.pos, p2.pos));
+    this.db.ensure(
+      constraints.equal(
+        ops.vdot(ops.vsub(s.point2.pos, s.point1.pos), ops.vsub(p.pos, p2.pos)),
+        0
+      )
+    );
     return [s2, p2];
   };
 
@@ -608,7 +554,7 @@ export class Construction {
     p1: Point,
     p2: Point,
     focus?: boolean,
-    len: number = 50
+    len: number = 100
   ): [Point, Segment] => {
     const p3 = this.mkPoint({ focus });
     const s2 = this.mkSegment(p1, p3, undefined, focus);
@@ -623,6 +569,12 @@ export class Construction {
       constraints.collinearOrdered(s.point1.pos, p.pos, s.point2.pos)
     );
     return [];
+  };
+
+  mkHorizontalSegment = (p1: Point, p2: Point): Segment => {
+    const s = this.mkSegment(p1, p2);
+    this.db.ensure(constraints.equal(p1.pos[1], p2.pos[1]));
+    return s;
   };
 
   setSelected = (element: ConstructionElement, active = true): void => {

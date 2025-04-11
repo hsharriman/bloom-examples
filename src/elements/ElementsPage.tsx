@@ -17,18 +17,19 @@ export interface ConstructionStep {
   action: ConstructionAction;
   args: string[]; // names of input elements
   description?: string;
+  coords?: [number, number];
   focus?: boolean;
 }
 
 export interface ConstructionDescription {
   name: string;
-  // inputs: ConstructionElement["tag"][]; unused
+  seed?: string;
   initSteps: ConstructionStep[]; // only for walkthrough
   steps: ConstructionStep[];
   id: number;
 }
 
-let construction = new Construction();
+let construction = new Construction("");
 let nameElementMap = new Map<string, ConstructionElement>();
 
 export default function ElementsWalkthrough(props: {
@@ -79,9 +80,12 @@ export default function ElementsWalkthrough(props: {
       let obj: ConstructionElement | ConstructionElement[] = [];
       switch (step.action) {
         case "mkPoint":
+          const coords = step.coords || [];
           obj = construction.mkPoint({
             label: step.resultNames[0],
             focus: step.focus,
+            x: coords[0],
+            y: coords[1],
             draggable: true,
           });
           break;
@@ -91,14 +95,6 @@ export default function ElementsWalkthrough(props: {
             nameElementMap.get(step.args[1]) as Point,
             undefined,
             // step.resultNames[0],
-            step.focus
-          );
-          break;
-        case "mkLine":
-          obj = construction.mkLine(
-            nameElementMap.get(step.args[0]) as Point,
-            nameElementMap.get(step.args[1]) as Point,
-            step.resultNames[0],
             step.focus
           );
           break;
@@ -147,6 +143,12 @@ export default function ElementsWalkthrough(props: {
             step.focus
           );
           break;
+        case "mkHorizontalSegment":
+          obj = construction.mkHorizontalSegment(
+            nameElementMap.get(step.args[0]) as Point,
+            nameElementMap.get(step.args[1]) as Point
+          );
+          break;
         case "mkCollinear":
           obj = construction.mkCollinear(
             nameElementMap.get(step.args[0]) as Segment,
@@ -155,8 +157,14 @@ export default function ElementsWalkthrough(props: {
           break;
         case "mkBisectSegment":
           obj = construction.mkBisectSegment(
-            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[0]) as Point,
             nameElementMap.get(step.args[1]) as Point
+          );
+          break;
+        case "mkLinesParallel":
+          obj = construction.mkLinesParallel(
+            nameElementMap.get(step.args[0]) as Segment,
+            nameElementMap.get(step.args[1]) as Segment
           );
           break;
         case "mkPerpendicularLine":
@@ -168,7 +176,7 @@ export default function ElementsWalkthrough(props: {
         case "mkCopySegmentToSegment":
           obj = construction.mkCopySegmentToSegment(
             nameElementMap.get(step.args[0]) as Segment,
-            nameElementMap.get(step.args[1]) as Segment,
+            nameElementMap.get(step.args[1]) as Point,
             nameElementMap.get(step.args[2]) as Point
           );
           break;
@@ -222,10 +230,11 @@ export default function ElementsWalkthrough(props: {
     }
 
     construction.build().then(setDiagram);
+    console.log("seed", description.seed);
 
     // if the walkthrough changes, start over
     return () => {
-      construction = new Construction();
+      construction = new Construction(description.seed);
       nameElementMap = new Map();
     };
   }, [description]);
@@ -255,11 +264,13 @@ export default function ElementsWalkthrough(props: {
         return [true, ""];
 
       case "mkSegment":
-      case "mkLine":
+      // case "mkLine":
       case "mkEquilateralTriangle":
       case "mkTriangle":
       case "mkTriangleFromSegments":
       case "mkLinesParallel":
+      case "mkBisectSegment":
+      case "mkHorizontalSegment":
       case "mkIntersections":
         return [
           (argNames[0] === correctStep.args[0] &&
@@ -268,18 +279,12 @@ export default function ElementsWalkthrough(props: {
               argNames[1] === correctStep.args[0]),
           `order doesn't matter: ${argNames}, correct: ${correctStep.args}`,
         ];
-      case "mkBisectSegment":
-        return [
-          argNames[0] === correctStep.args[0],
-          `was passed: ${argNames}, correct: ${correctStep.args}`,
-        ];
       case "mkLineExtension":
       case "mkCircle":
       case "mkCopySegment":
       case "mkCollinear":
       case "mkPerpendicularLine":
       case "mkCutGivenLen":
-        console.log("checking order matters ", argNames, correctStep.args);
         return [
           argNames[0] === correctStep.args[0] &&
             argNames[1] === correctStep.args[1],
@@ -331,10 +336,6 @@ export default function ElementsWalkthrough(props: {
       const x = ((e.clientX - bbox.left) / bbox.width - 0.5) * canvasWidth;
       const y = -((e.clientY - bbox.top) / bbox.height - 0.5) * canvasWidth;
 
-      console.log(
-        "mkpoint name",
-        description.steps[currStepIdx].resultNames[0]
-      );
       const p = construction.mkPoint({
         x,
         y,
@@ -413,16 +414,16 @@ export default function ElementsWalkthrough(props: {
     );
   };
 
-  const addLineOnClick = () => {
-    addAction("mkLine", [CObj.Point], ([A, B]) =>
-      construction.mkLine(
-        A as Point,
-        B as Point,
-        undefined,
-        description.steps[currStepIdx].focus
-      )
-    );
-  };
+  // const addLineOnClick = () => {
+  //   addAction("mkLine", [CObj.Point], ([A, B]) =>
+  //     construction.mkLine(
+  //       A as Point,
+  //       B as Point,
+  //       undefined,
+  //       description.steps[currStepIdx].focus
+  //     )
+  //   );
+  // };
 
   const addCircleOnClick = () => {
     addAction("mkCircle", [CObj.Point], ([A, B]) =>
@@ -501,7 +502,7 @@ export default function ElementsWalkthrough(props: {
       "mkBisectSegment",
       [CObj.Segment, CObj.Point],
       ([A, B]: ConstructionElement[]) =>
-        construction.mkBisectSegment(A as Segment, B as Point)
+        construction.mkBisectSegment(A as Point, B as Point)
     );
   };
 
@@ -540,7 +541,7 @@ export default function ElementsWalkthrough(props: {
       ([A, B, C]: ConstructionElement[]) =>
         construction.mkCopySegmentToSegment(
           A as Segment,
-          B as Segment,
+          B as Point,
           C as Point
         )
     );
@@ -600,7 +601,6 @@ export default function ElementsWalkthrough(props: {
         objs.map((obj, i) =>
           nameElementMap.set(description.steps[currStepIdx].resultNames[i], obj)
         );
-        console.log(nameElementMap);
       } else {
         nameElementMap.set(description.steps[currStepIdx].resultNames[0], objs);
       }
@@ -614,130 +614,161 @@ export default function ElementsWalkthrough(props: {
       {/* Place the following buttons in a div that looks nice*/}
       <div className="py-8 px-12 flex flex-row w-full gap-8 ">
         <div className="flex flex-col max-w-[450px]">
-          <div className="font-bold text-black text-2xl pb-2">
-            Next Step Instructions
+          <div className="flex flex-col bg-blue-200 px-4 py-4 pb-6 rounded-3xl shadow-lg">
+            <div className="font-bold text-black text-2xl">
+              Next Step Instructions
+            </div>
+            <div className="italic">Press ESC to cancel action</div>
+            {renderStepInstructions(currStepIdx, description)}
           </div>
-          <div className="italic">Press ESC to cancel action</div>
-          {renderStepInstructions(currStepIdx, description)}
           <div className="font-bold text-black text-2xl pb-2 pt-4">
             Construction Actions
           </div>
-          <div className="max-h-[600px] flex flex-col flex-wrap gap-x-4">
-            {ActionButton(
-              "Add Point",
-              currAction !== null,
-              addPointOnClick,
-              true
-            )}
-            {ActionButton(
-              "Add Segment",
-              currAction !== null,
-              addSegmentOnClick,
-              true
-            )}
-            {ActionButton(
+          <div className="flex flex-col">
+            <div className="text-black font-mono font-bold text-lg">
+              Basic Object Actions
+            </div>
+            <div className="flex flex-row flex-wrap gap-x-4">
+              {ActionButton(
+                "Add Point",
+                currAction !== null,
+                addPointOnClick,
+                true
+              )}
+              {ActionButton(
+                "Add Segment",
+                currAction !== null,
+                addSegmentOnClick,
+                true
+              )}
+              {/* {ActionButton(
               "Add Line",
               currAction !== null,
               addLineOnClick,
               true
-            )}
-            {ActionButton(
-              "Add Circle",
-              currAction !== null,
-              addCircleOnClick,
-              true
-            )}
-            {ActionButton(
-              "Add Intersections",
-              currAction !== null,
-              addIntersectionsOnClick,
-              true
-            )}
-            {ActionButton(
-              "Add Equilateral Triangle",
-              currAction !== null,
-              addEquilatOnClick,
-              description.id > 2
-            )}
-            {ActionButton(
-              "Extend Line",
-              currAction !== null,
-              addLineExtensionOnClick,
-              description.id > 2
-            )}
-            {ActionButton(
-              "Copy Segment",
-              currAction !== null,
-              addCopySegmentOnClick,
-              description.id > 3
-            )}
-            {ActionButton(
-              "Cut Length",
-              currAction !== null,
-              addCutSegmentOnClick,
-              description.id > 4
-            )}
-            {ActionButton(
-              "Bisect Angle",
-              currAction !== null,
-              addBisectAngleOnClick,
-              description.id > 6
-            )}
-            {ActionButton(
-              "Make Point Collinear",
-              currAction !== null,
-              addCollinearOnClick,
-              description.id > 6
-            )}
-            {ActionButton(
-              "Bisect Segment",
-              currAction !== null,
-              addBisectSegmentOnClick,
-              description.id > 7
-            )}
-            {ActionButton(
-              "Make Perpendicular Line",
-              currAction !== null,
-              addPerpendicularOnClick,
-              description.id > 8
-            )}
-            {ActionButton(
-              "Add Triangle",
-              currAction !== null,
-              addTriangleOnClick,
-              description.id > 9
-            )}
-            {ActionButton(
-              "Copy segment onto a segment",
-              currAction !== null,
-              addCopySegmentToSegmentOnClick,
-              description.id > 11
-            )}
-            {ActionButton(
-              "Add triangle from 3 segments",
-              currAction !== null,
-              addTriangleFromSegmentsOnClick,
-              description.id > 12
-            )}
-            {ActionButton(
-              "Copy Angle to a point",
-              currAction !== null,
-              addCopyAngle,
-              description.id > 14
-            )}
-            {ActionButton(
-              "Make a parallel segment",
-              currAction !== null,
-              addMakeLinesParallel,
-              description.id > 15 // TODO: update this
-            )}
-            {ActionButton(
-              "Make a parallel segment between two points",
-              currAction !== null,
-              addMakeParallelLineBwPoints,
-              description.id > 16
-            )}
+            )} */}
+              {ActionButton(
+                "Add Circle",
+                currAction !== null,
+                addCircleOnClick,
+                true
+              )}
+              {ActionButton(
+                "Add Intersections",
+                currAction !== null,
+                addIntersectionsOnClick,
+                true
+              )}
+              {ActionButton(
+                "Add Collinear Point",
+                currAction !== null,
+                addCollinearOnClick,
+                description.id > 6
+              )}
+            </div>
           </div>
+          <div className="flex flex-col">
+            <div className="text-black font-mono font-bold text-lg">
+              Segment / Line Actions
+            </div>
+            <div className="flex flex-row flex-wrap gap-x-4">
+              {ActionButton(
+                "Extend Line",
+                currAction !== null,
+                addLineExtensionOnClick,
+                description.id > 2
+              )}
+              {ActionButton(
+                "Copy Segment",
+                currAction !== null,
+                addCopySegmentOnClick,
+                description.id > 3
+              )}
+              {ActionButton(
+                "Cut Length",
+                currAction !== null,
+                addCutSegmentOnClick,
+                description.id > 4
+              )}
+              {ActionButton(
+                "Bisect Segment",
+                currAction !== null,
+                addBisectSegmentOnClick,
+                description.id > 7
+              )}
+              {ActionButton(
+                "Make Perpendicular Line",
+                currAction !== null,
+                addPerpendicularOnClick,
+                description.id > 8
+              )}
+              {ActionButton(
+                "Copy segment onto a segment",
+                currAction !== null,
+                addCopySegmentToSegmentOnClick,
+                description.id > 11
+              )}
+              {ActionButton(
+                "Make a parallel segment",
+                currAction !== null,
+                addMakeLinesParallel,
+                description.id > 15 // TODO: update this
+              )}
+              {ActionButton(
+                "Make a parallel segment between two points",
+                currAction !== null,
+                addMakeParallelLineBwPoints,
+                description.id > 16
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <div className="text-black font-mono font-bold text-lg">
+              Angle Actions
+            </div>
+            <div className="flex flex-row flex-wrap gap-x-4">
+              {ActionButton(
+                "Bisect Angle",
+                currAction !== null,
+                addBisectAngleOnClick,
+                description.id > 6
+              )}
+              {ActionButton(
+                "Copy Angle to a point",
+                currAction !== null,
+                addCopyAngle,
+                description.id > 14
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <div className="text-black font-mono font-bold text-lg">
+              Triangle Actions
+            </div>
+            <div className="flex flex-row flex-wrap gap-x-4">
+              {ActionButton(
+                "Add Equilateral Triangle",
+                currAction !== null,
+                addEquilatOnClick,
+                description.id > 2
+              )}
+
+              {ActionButton(
+                "Add Triangle",
+                currAction !== null,
+                addTriangleOnClick,
+                description.id > 9
+              )}
+
+              {ActionButton(
+                "Copy Triangle from 3 segments",
+                currAction !== null,
+                addTriangleFromSegmentsOnClick,
+                description.id > 12
+              )}
+            </div>
+          </div>
+          <div className="max-h-[600px] flex flex-col flex-wrap gap-x-4"></div>
         </div>
 
         <div
@@ -756,7 +787,7 @@ const renderStepInstructions = (
   description: ConstructionDescription
 ) => {
   return (
-    <div className="font-lg text-black">
+    <div className="font-xl text-black font-bold">
       {currIdx >= description.steps.length ? (
         "Construction complete!"
       ) : (
