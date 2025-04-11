@@ -2,12 +2,12 @@ import { ConstructionStep } from "../ElementsPage";
 
 export const pointStep = (
   name: string,
-  focus: boolean = false
+  coords?: [number, number]
 ): ConstructionStep => ({
   resultNames: [name],
   action: "mkPoint",
+  coords,
   args: [],
-  focus,
   description: "Place a point",
 });
 
@@ -97,14 +97,14 @@ export const copySegmentStep = (
 
 export const copySegmentOnSegmentStep = (
   s: string,
-  s2: string,
-  p: string,
+  p1: string,
+  p2: string,
   newPt: string
 ): ConstructionStep => ({
-  resultNames: [`${p}${newPt}`, newPt],
+  resultNames: [newPt],
   action: "mkCopySegmentToSegment",
-  args: [s, s2, p],
-  description: `Copy the segment ${s} onto segment ${s2} starting from point ${p}`,
+  args: [s, p1, p2],
+  description: `Copy the segment ${s} onto segment ${p1}${p2} starting from point ${p1}`,
 });
 
 export const triangleStep = (
@@ -209,4 +209,14 @@ export const perpendicularStep = (
   action: "mkPerpendicularLine",
   args: [s, corner],
   description: `Construct a line that is perpendicular to ${s} from ${corner}`,
+});
+
+export const horizontalSegmentStep = (
+  p1: string,
+  p2: string
+): ConstructionStep => ({
+  resultNames: [`${p1}${p2}`],
+  action: "mkHorizontalSegment",
+  args: [p1, p2],
+  description: `Construct a horizontal segment ${p1}${p2}`,
 });

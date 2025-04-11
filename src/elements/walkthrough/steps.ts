@@ -7,6 +7,7 @@ import {
   cutLengthStep,
   equalSegmentStep,
   equilateralTriangleStep,
+  horizontalSegmentStep,
   initLinesParallelStep,
   lineExtensionStep,
   moveAngleStep,
@@ -21,10 +22,10 @@ import {
 
 export const Midpoint: ConstructionDescription = {
   name: "bisector",
-  // inputs: ["Point", "Point"],
   id: 1,
   // TODO: maybe add initial positions for consistency? or a set seed
-  initSteps: [pointStep("A", true), pointStep("B", true)],
+  initSteps: [pointStep("A", [60, 50]), pointStep("B", [-60, 50])],
+  seed: "3045ee4h",
   steps: [
     circleStep("A", "B"),
     circleStep("B", "A"),
@@ -36,21 +37,14 @@ export const Midpoint: ConstructionDescription = {
     },
     segmentStep("C", "D"),
     segmentStep("A", "B", true),
-    {
-      resultNames: ["E"],
-      action: "mkIntersections",
-      args: ["CD", "AB"],
-      description: "Find the intersection point of AB and CD",
-      focus: true,
-    },
   ],
 };
 
 export const EquilateralTriangle: ConstructionDescription = {
   name: "Prop 1: equilateral triangle",
-  // inputs: ["Point", "Point"],
+  seed: "23j9da50",
   id: 2,
-  initSteps: [pointStep("F", true), pointStep("G", true)],
+  initSteps: [pointStep("F"), pointStep("G"), horizontalSegmentStep("F", "G")],
   steps: [
     circleStep("F", "G"),
     circleStep("G", "F"),
@@ -62,18 +56,18 @@ export const EquilateralTriangle: ConstructionDescription = {
     },
     segmentStep("F", "H", true),
     segmentStep("G", "H", true),
-    segmentStep("F", "G", true),
   ],
 };
 
 const CopySegment: ConstructionDescription = {
   name: "Prop 2: copy segment",
   id: 3,
-  // inputs: ["Point", "Point", "Point", "Segment"],
+  // seed: Math.random().toString(20).substring(2, 10),
+  seed: "fg2ja313",
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", true),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
     segmentStep("B", "C", true),
   ],
   steps: [
@@ -106,16 +100,15 @@ const CopySegment: ConstructionDescription = {
 
 const CutGivenLen: ConstructionDescription = {
   name: "Prop 3: Cut Given Length",
-  // inputs: ["Point", "Point"],
+  seed: "ieh1ha1f",
   id: 4,
-  // TODO: maybe add initial positions for consistency? or a set seed
   initSteps: [
-    pointStep("A", false),
-    pointStep("B", false),
-    segmentStep("A", "B"),
-    pointStep("C", false),
-    pointStep("D", false),
-    segmentStep("C", "D", true),
+    pointStep("A"),
+    pointStep("B"),
+    horizontalSegmentStep("A", "B"),
+    pointStep("C"),
+    pointStep("D"),
+    horizontalSegmentStep("C", "D"),
   ],
   steps: [
     copySegmentStep("CD", "A", "E"),
@@ -127,21 +120,20 @@ const CutGivenLen: ConstructionDescription = {
       description: "Find the intersection points of the circle and line",
       focus: true,
     },
-    segmentStep("A", "F", true),
   ],
 };
 
 const Isosceles: ConstructionDescription = {
   name: "Prop 5: Isosceles base angles are equal",
-  // inputs: ["Point", "Point", "Point"],
+  seed: "0g6770jd",
   id: 5,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", false),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
     segmentStep("A", "B", true),
     equalSegmentStep("AB", "A", "C"),
-    segmentStep("B", "C"),
+    horizontalSegmentStep("B", "C"),
   ],
   steps: [
     lineExtensionStep("AB", "D"),
@@ -165,13 +157,13 @@ const Isosceles: ConstructionDescription = {
 
 const SSS: ConstructionDescription = {
   name: "Prop 7: SSS Uniqueness",
-  // inputs: ["Point", "Point", "Point", "Point"],
+  seed: Math.random().toString(20).substring(2, 10),
   id: 6,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", false),
-    pointStep("D", false),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
+    pointStep("D"),
     segmentStep("A", "B", true),
     segmentStep("A", "D", true),
     segmentStep("B", "D", true),
@@ -183,14 +175,15 @@ const SSS: ConstructionDescription = {
 
 const BisectAngle: ConstructionDescription = {
   name: "Prop 9: Bisect angle",
-  // inputs: ["Point", "Point", "Point"],
+  seed: "a0i48b7e",
   id: 6,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", false),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
     segmentStep("A", "B"),
-    equalSegmentStep("AB", "A", "C"),
+    segmentStep("A", "C"),
+    // equalSegmentStep("AB", "A", "C"),
   ],
   steps: [
     cutLengthStep("A", "B", "D"),
@@ -202,13 +195,9 @@ const BisectAngle: ConstructionDescription = {
 
 const BisectSegment: ConstructionDescription = {
   name: "Prop 10: Bisect segment",
-  // inputs: ["Point", "Point"],
+  seed: "83h16161",
   id: 7,
-  initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    segmentStep("A", "B"),
-  ],
+  initSteps: [pointStep("A"), pointStep("B"), horizontalSegmentStep("A", "B")],
   steps: [
     equilateralTriangleStep("A", "B", "C"),
     {
@@ -223,20 +212,14 @@ const BisectSegment: ConstructionDescription = {
 
 const Perpendicular: ConstructionDescription = {
   name: "Prop 11: Draw perpendicular",
-  // inputs: ["Point", "Point", "Point", "Segment"],
+  seed: "g62b24eb",
   id: 8,
-  initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", true),
-    segmentStep("A", "B"),
-    collinearStep("AB", "C"),
-  ],
+  initSteps: [pointStep("A"), pointStep("B"), horizontalSegmentStep("A", "B")],
   steps: [
     {
-      resultNames: ["AC", "CD"],
+      resultNames: ["C"],
       action: "mkBisectSegment",
-      args: ["AB", "C"],
+      args: ["A", "B"],
       description: "Bisect the segment AB",
     },
     equilateralTriangleStep("A", "B", "D"),
@@ -246,13 +229,9 @@ const Perpendicular: ConstructionDescription = {
 
 const AngleOnLineMakes180: ConstructionDescription = {
   name: "Prop 13: Angle on one side of straight line makes two perpendicular angles",
-  // inputs: ["Point", "Point", "Segment"],
+  seed: "e7fie9ba",
   id: 9,
-  initSteps: [
-    pointStep("D", true),
-    pointStep("C", true),
-    segmentStep("D", "C"),
-  ],
+  initSteps: [pointStep("D"), pointStep("C"), horizontalSegmentStep("D", "C")],
   steps: [
     pointStep("B"),
     collinearStep("DC", "B"),
@@ -270,14 +249,14 @@ const AngleOnLineMakes180: ConstructionDescription = {
 // this one is weird because you draw a "parallel line" as if it is not parallel in the example.
 const AnglesMakeStraightLine: ConstructionDescription = {
   name: "Prop 14: Sum of two angles one side of line makes a straight line",
-  // inputs: ["Point", "Point", "Segment"],
+  seed: "ab407ab7",
   id: 10,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("D", true),
-    pointStep("C", true),
-    segmentStep("D", "C"),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("D"),
+    pointStep("C"),
+    horizontalSegmentStep("D", "C"),
     segmentStep("A", "B"),
     collinearStep("DC", "B"),
   ],
@@ -290,28 +269,28 @@ const AnglesMakeStraightLine: ConstructionDescription = {
 
 const TriangleExternalAngle: ConstructionDescription = {
   name: "Prop 16: Triangle external angle is greater than each opposite internal angle",
-  // inputs: ["Point", "Point", "Point", "Triangle"],
+  seed: "429gibde",
   id: 11,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("D", true),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
     triangleStep("A", "B", "C"),
   ],
   steps: [
     lineExtensionStep("BC", "D"),
     {
-      resultNames: ["AE", "EC"],
+      resultNames: ["E"],
       action: "mkBisectSegment",
-      args: ["AC", "E"],
+      args: ["A", "C"],
       description: "Bisect the segment AC",
     },
     segmentStep("B", "E"), // extra step to make it look like the example
     lineExtensionStep("AE", "F"), // extra step
     {
-      resultNames: ["BE", "EF"],
+      resultNames: ["E"],
       action: "mkBisectSegment",
-      args: ["BF", "E"],
+      args: ["B", "F"],
       description: "Bisect the segment AC",
     },
     segmentStep("F", "C"), // TODO?
@@ -320,26 +299,26 @@ const TriangleExternalAngle: ConstructionDescription = {
 
 const TriangleFromSegments: ConstructionDescription = {
   name: "Prop 22: Draw a triangle from three segments",
-  // inputs: ["Point", "Point", "Point", "Segment", "Segment", "Segment"],
+  seed: "9geah3b8",
   id: 12,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", true),
-    pointStep("D", true),
-    pointStep("E", true),
-    pointStep("F", true),
-    segmentStep("A", "B"),
-    segmentStep("C", "D"),
-    segmentStep("E", "F"),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
+    pointStep("D"),
+    pointStep("E"),
+    pointStep("F"),
+    horizontalSegmentStep("A", "B"),
+    horizontalSegmentStep("C", "D"),
+    horizontalSegmentStep("E", "F"),
   ],
   steps: [
     pointStep("G"),
     pointStep("H"),
     segmentStep("G", "H"),
-    copySegmentOnSegmentStep("AB", "GH", "G", "I"),
-    copySegmentOnSegmentStep("CD", "GH", "I", "J"),
-    copySegmentOnSegmentStep("EF", "GH", "J", "K"),
+    copySegmentOnSegmentStep("AB", "G", "H", "I"),
+    copySegmentOnSegmentStep("CD", "I", "H", "J"),
+    copySegmentOnSegmentStep("EF", "J", "H", "K"),
     circleStep("I", "G"),
     circleStep("J", "K"),
     {
@@ -354,12 +333,12 @@ const TriangleFromSegments: ConstructionDescription = {
 
 const MoveAngle: ConstructionDescription = {
   name: "Prop 23: Move angle",
-  // inputs: ["Point", "Point", "Point", "Segment", "Segment", "Segment"],
+  seed: "20if94i5",
   id: 13,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", true),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
     segmentStep("A", "B"),
     segmentStep("A", "C"),
   ],
@@ -368,15 +347,15 @@ const MoveAngle: ConstructionDescription = {
 
 const ParallelToEachOther: ConstructionDescription = {
   name: "Prop 30: Lines that are parallel to same line are parallel to each other",
-  // inputs: ["Point", "Point", "Point", "Segment", "Segment", "Segment"],
+  seed: Math.random().toString(20).substring(2, 10),
   id: 14,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", true),
-    pointStep("D", true),
-    pointStep("E", true),
-    pointStep("F", true),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
+    pointStep("D"),
+    pointStep("E"),
+    pointStep("F"),
     segmentStep("A", "B"),
     segmentStep("C", "D"),
     segmentStep("E", "F"),
@@ -400,9 +379,9 @@ const ParallelThruPoint: ConstructionDescription = {
   // inputs: ["Point", "Point", "Point", "Segment", "Segment", "Segment"],
   id: 15,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", true),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
     segmentStep("B", "C"),
   ],
   steps: [
@@ -418,9 +397,9 @@ const TriangleAngleSum: ConstructionDescription = {
   // inputs: ["Point", "Point", "Point", "Segment", "Segment", "Segment"],
   id: 16,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", true),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
     triangleStep("A", "B", "C"),
   ],
   steps: [lineExtensionStep("BC", "D"), parallelStep("AB", "C", "E")],
@@ -431,10 +410,10 @@ const TriangleArea: ConstructionDescription = {
   // inputs: ["Point", "Point", "Point", "Segment", "Segment", "Segment"],
   id: 17,
   initSteps: [
-    pointStep("A", true),
-    pointStep("B", true),
-    pointStep("C", true),
-    pointStep("D", true),
+    pointStep("A"),
+    pointStep("B"),
+    pointStep("C"),
+    pointStep("D"),
     triangleStep("A", "B", "C"),
     triangleStep("B", "C", "D"),
     segmentStep("A", "D"),
@@ -447,34 +426,36 @@ const TriangleArea: ConstructionDescription = {
 
 const Square: ConstructionDescription = {
   name: "Prop 46: Draw a square",
+  seed: "381a9bbh",
+  // seed: Math.random().toString(20).substring(2, 10),
   id: 18,
-  initSteps: [pointStep("A"), pointStep("B"), segmentStep("A", "B")],
+  initSteps: [pointStep("A"), pointStep("B"), horizontalSegmentStep("A", "B")],
   steps: [
     perpendicularStep("AB", "A", "C"),
-    copySegmentOnSegmentStep("AB", "AC", "A", "D"),
-    parallelStep("AD", "B", "E"),
+    copySegmentOnSegmentStep("AB", "A", "C", "D"),
+    parallelStep("AC", "B", "E"),
     parallelStepBwPoints("AB", "D", "E"),
   ],
 };
 
 export const walkthroughs: ConstructionDescription[] = [
-  Midpoint,
+  // Midpoint,
   EquilateralTriangle,
-  CopySegment,
+  // CopySegment, // brittle
   CutGivenLen,
-  Isosceles,
-  SSS,
-  BisectAngle,
-  BisectSegment,
+  // Isosceles, // brittle
+  // SSS,
+  // BisectAngle, // brittle
+  // BisectSegment, // brittle
   Perpendicular,
-  AngleOnLineMakes180,
-  AnglesMakeStraightLine,
-  TriangleExternalAngle,
-  TriangleFromSegments,
+  // AngleOnLineMakes180, // brittle
+  // AnglesMakeStraightLine, // boring construction
+  // TriangleExternalAngle, // brittle
+  // TriangleFromSegments, // too big
   MoveAngle,
-  ParallelToEachOther,
-  ParallelThruPoint,
-  TriangleAngleSum,
-  TriangleArea,
+  // ParallelToEachOther, // parallel doesn't work
+  // ParallelThruPoint,
+  // TriangleAngleSum,
+  // TriangleArea,
   Square,
 ];

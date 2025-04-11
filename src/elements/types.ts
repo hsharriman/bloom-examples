@@ -62,7 +62,6 @@ export interface MkPointProps {
 export type ConstructionAction =
   | "mkPoint"
   | "mkSegment"
-  | "mkLine"
   | "mkCircle"
   | "mkTriangle"
   | "mkIntersections"
@@ -79,13 +78,14 @@ export type ConstructionAction =
   | "mkTriangleFromSegments"
   | "mkLinesParallel"
   | "mkCopyAngle"
+  | "mkHorizontalSegment"
   | "mkParallelLine"
   | "mkParallelLineBwPoints";
 
 export enum CObj {
   Point = "Point",
   Segment = "Segment",
-  Line = "Line",
+  // Line = "Line",
   Circle = "Circle",
   Triangle = "Triangle",
 }
