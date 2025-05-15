@@ -6,10 +6,10 @@ export const buildDiscDiagram = async () => {
   const numCircles = 20;
 
   const { circle, ensure, type, forall, build } =
-    new DiagramBuilder(canvas(width, height), "", 10000000);
+    new DiagramBuilder(canvas(width, height), "", 1000);
 
   const circleRad = 20;
-  const containerRad = 200;
+  const containerRad = 190;
   const containerBorder = 2;
 
   const Circle = type();

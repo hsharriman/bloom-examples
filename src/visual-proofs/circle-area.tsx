@@ -43,7 +43,7 @@ const hsvToRgb = (h: number, s: number, v: number): number[] => {
 }
 
 const buildDiagram = async (numSlices: number = 5) => {
-  const db = new DiagramBuilder(canvas(800, 400));
+  const db = new DiagramBuilder(canvas(1000, 400));
   const {
     type,
     input,
@@ -204,10 +204,19 @@ export default function CircleAreaDiagram() {
 
   return (
     <div>
-      <div style={{ width: "50em" }}>
-        <Renderer diagram={diagram} />
+      <div style={{width: "100%" }}>
+        <Renderer diagram={diagram}/>
       </div>
-      <input style={{ margin: "auto", width: "100%" }} type={"range"} min={2} max={20} onChange={onSliderChange} value={numSlices}/>
+      <div style={{
+        width: "25%",
+        position: "relative",
+        left: "40%",
+        bottom: "3em",
+      }}>
+        {/* Center above slider */}
+        <p style={{ textAlign: "center", fontSize: "24px" }}>Number of Slices: {numSlices}</p>
+        <input style={{ width: "100%" }} type={"range"} min={3} max={20} onChange={onSliderChange} value={numSlices}/>
+      </div>
     </div>
   );
 }

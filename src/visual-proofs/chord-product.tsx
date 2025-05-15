@@ -66,7 +66,7 @@ const buildDiagram = async (numChords: number) => {
 
     const disp = ops.vsub(chord.end, mainCircleCenter);
     equation({
-      string: `\\zeta_{${i}}`,
+      string: `\\zeta^{${i}}`,
       center: ops.vadd(mainCircleCenter, ops.vmul(1.1, disp)) as Vec2,
     });
 
@@ -94,12 +94,12 @@ const buildDiagram = async (numChords: number) => {
   }
 
   equation({
-    string: `\\lim_{z\\to\\zeta_0}\\frac{|z - \\zeta_0||z - \\zeta_1|\\ldots|z-\\zeta_{${numChords - 1}}|}{|z - \\zeta_0|}`,
+    string: `\\lim_{z\\to 1}\\frac{|z - 1||z - \\zeta_1|\\ldots|z-\\zeta_{${numChords - 1}}|}{|z - 1|}`,
     center: [200, 100]
   });
 
   equation({
-    string: `= \\lim_{z\\to 1}\\frac{\\left|z^{n+1}-1\\right|}{|z - 1|}`,
+    string: `= \\lim_{z\\to 1}\\frac{\\left|z^{${numChords}}-1\\right|}{|z - 1|}`,
     center: [139, 50]
   });
 
@@ -121,34 +121,58 @@ export default function ChordProductDiagram() {
   const [diagram, setDiagram] = useState<Diagram | null>(null);
   const [numChords, setNumChords] = useState<number>(6);
   const [product, setProduct] = useState(0);
+  const [centerx, setCenterX] = useState(0);
+  const [centery, setCenterY] = useState(0);
 
   useEffect(() => {
-    buildDiagram(numChords).then(setDiagram);
-  }, [numChords]);
+    (async () => {
+      const diagram = await buildDiagram(numChords);
+      setDiagram(diagram);
+    })();
+  }, []);
 
   useEffect(() => {
-    diagram?.addInputEffect("product", setProduct);
+    if (!diagram) return;
+
+    diagram.addInputEffect("product", setProduct);
+    diagram.addInputEffect("center-x", setCenterX);
+    diagram.addInputEffect("center-y", setCenterY);
+
+    setProduct(diagram.getInput("product"));
+    setCenterX(diagram.getInput("center-x"));
+    setCenterY(diagram.getInput("center-y"));
   }, [diagram]);
 
-  const onSliderChange = useMemo(() => (e: ChangeEvent) => {
-    setNumChords(Number.parseInt((e.target as HTMLInputElement).value));
-  }, []);
+  const onSliderChange = useMemo(() => async (e: ChangeEvent) => {
+    const newNumChords = Number.parseInt((e.target as HTMLInputElement).value);
+    setNumChords(newNumChords);
+
+    const newDiagram = await buildDiagram(newNumChords);
+    setDiagram(newDiagram);
+
+    newDiagram.setInput("center-x", centerx);
+    newDiagram.setInput("center-y", centery);
+  }, [centerx, centery]);
 
   const rounded = Math.round(product * 1000) / 1000;
 
   return (
     <div>
-      <div style={{ width: "50em" }}>
-        <Renderer diagram={diagram} />
+      <div style={{width: "100%"}}>
+        <Renderer diagram={diagram}/>
       </div>
       {/* show product with only 3 decimal places */}
-      <p style={{
+      <b style={{marginLeft: "12em", fontSize: "24px"}}>Chord Length Product: {rounded.toFixed(2)}</b>
+      <div style={{
+        width: "25%",
         position: "relative",
-        left: "480px",
-        bottom: "100px",
-        font: "bold 18px monospace",
-      }}>Chord Length Product: {rounded.toFixed(2)}</p>
-      <input style={{ margin: "auto", width: "100%" }} type={"range"} min={2} max={20} onChange={onSliderChange} value={numChords}/>
+        left: "60%",
+        bottom: "12em",
+
+      }}>
+        <p style={{textAlign: "center", fontSize: "24px"}}>Number of Chords: {numChords}</p>
+        <input style={{width: "100%"}} type={"range"} min={2} max={10} onChange={onSliderChange} value={numChords}/>
+      </div>
     </div>
   );
 }

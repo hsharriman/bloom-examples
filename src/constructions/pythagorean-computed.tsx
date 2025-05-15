@@ -8,12 +8,12 @@ const buildDiagram = async () => {
   const leftEdge = -width / 2 + margin;
   const topEdge = height / 2 - margin;
   const square1_x = leftEdge;
-  const square1_y = topEdge - 200;
+  const square1_y = topEdge - 225;
   const cd = new ConstructionDomain(width, height);
 
   const Y = cd.mkPointFixed("Y", leftEdge, topEdge);
-  const X = cd.mkPoint("X", false, true, [leftEdge, topEdge - 50]);
-  const Z = cd.mkPoint("Z", false, true, [leftEdge + 120, topEdge]);
+  const X = cd.mkPoint("X", false, true, [leftEdge + 100, topEdge - 150]);
+  const Z = cd.mkPoint("Z", false, true, [leftEdge + 220, topEdge - 100]);
   cd.mkSegment(X, Y, "a", true);
   const a = ops.vdist([X.x, X.y], [Y.x, Y.y]);
   cd.mkSegment(Y, Z, "b", true);
@@ -56,8 +56,8 @@ const buildDiagram = async () => {
   triangles[2] = cd.mkTriangle(Q, C, R, red);
   triangles[3] = cd.mkTriangle(R, D, S, purple);
 
-  const square2_x = 0;
-  const square2_y = topEdge - 200;
+  const square2_x = 50;
+  const square2_y = topEdge - 225;
 
   const p1 = cd.mkPointFixed("p1", square2_x, square2_y, false);
   const p2 = cd.mkPointFixed("p2", add(p1.x, b), p1.y, false);
@@ -93,8 +93,10 @@ export default function PythagoreanComputedConstructor() {
   return (
     <div
       style={{
-        width: "50em",
-        height: "50em",
+        width: "70em",
+        height: "70em",
+        margin: "2em",
+        marginTop: "4em",
       }}
     >
       <Renderer diagram={diagram} />

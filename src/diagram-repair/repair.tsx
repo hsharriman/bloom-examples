@@ -105,7 +105,7 @@ export default function DiagramRepair(
             diagram?.setInput(`selected-${t.name}`, 0);
             selected.current = [];
             setDummy(d => !d);
-          })
+          }, true)
         ))}
       </div>
     </div>

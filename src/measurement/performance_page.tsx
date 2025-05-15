@@ -103,10 +103,23 @@ export default function PerformancePage() {
   const discs = useDiagram(buildDiscDiagram);
   const reflection = useDiagram(buildReflectionDiagram);
 
-  return (
-    <>
-      {discs && <InstrumentDiagram diagram={discs} />}
-      {reflection && <InstrumentDiagram diagram={reflection} />}
-    </>
-  );
+  return (<>
+    <div style={{
+      marginTop: "5em",
+      margin: "auto",
+      width: "50%",
+      height: "50%",
+    }}
+    >
+      <Renderer diagram={discs} />
+    </div>
+    <div style={{
+      marginTop: "50em",
+      margin: "auto",
+      width: "50%",
+      height: "50%",
+    }}>
+      <Renderer diagram={reflection} />
+    </div>
+    </>);
 }
